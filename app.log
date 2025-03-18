@@ -1,0 +1,4 @@
+2025-03-13 03:53:02,887 - __main__ - INFO - Starting Medical Transcription Analysis API
+2025-03-13 03:53:14,192 - __main__ - ERROR - Error starting application: No module named 'langchain'
+2025-03-17 09:32:02,934 - __main__ - INFO - Starting Medical Transcription Analysis API
+2025-03-17 09:32:13,569 - __main__ - ERROR - Error starting application: Module langchain_community.vectorstores not found. Please install langchain-community to access this module. You can install it using `pip install -U langchain-community`
