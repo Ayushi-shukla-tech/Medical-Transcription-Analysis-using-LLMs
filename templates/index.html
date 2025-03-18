@@ -1,0 +1,60 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Auth</title>
+</head>
+<body>
+    <h1>Test Login</h1>
+    <form id="loginForm">
+        <input type="text" id="username" placeholder="Username" value="testuser">
+        <input type="password" id="password" placeholder="Password" value="password">
+        <button type="submit">Login</button>
+    </form>
+    <div id="message"></div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // Create form data
+            const formData = new FormData();
+            formData.append('username', username);
+            formData.append('password', password);
+            
+            // Send login request
+            fetch('/token', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Login successful:", data);
+                
+                // Store token in localStorage
+                localStorage.setItem('access_token', data.access_token);
+                localStorage.setItem('token_type', data.token_type);
+                
+                // Set auth cookie for server-side requests
+                document.cookie = `Authorization=${data.token_type} ${data.access_token}; path=/; SameSite=Strict`;
+                console.log('Auth cookie set for dashboard access');
+                
+                document.getElementById('message').textContent = "Login successful! Redirecting...";
+                
+                // Redirect to dashboard
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 1000);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('message').textContent = "Login failed!";
+            });
+        });
+    </script>
+</body>
+</html>
+    
