@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Transcription System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        :root {
+            --primary-color: #4a86e8;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+        }
+        
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .auth-card {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .card-body {
+            padding: 30px;
+        }
+        
+        .nav-tabs {
+            border-bottom: none;
+            margin-bottom: 20px;
+        }
+        
+        .nav-tabs .nav-item {
+            margin-bottom: 0;
+            width: 33.33%;
+            text-align: center;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            color: var(--secondary-color);
+            font-weight: 600;
+            padding: 12px 0;
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+            background-color: transparent;
+        }
+        
+        .form-control {
+            border-radius: 5px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(74, 134, 232, 0.25);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 5px;
+            padding: 12px;
+            font-weight: 600;
+            width: 100%;
+        }
+        
+        .btn-primary:hover {
+            background-color: #3a76d8;
+        }
+        
+        .btn-link {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .btn-link:hover {
+            text-decoration: underline;
+        }
+        
+        .form-text {
+            color: var(--secondary-color);
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .header-icon {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        
+        .patient-icon {
+            color: #4a86e8;
+            margin-right: 10px;
+        }
+        
+        .doctor-icon {
+            color: #4a86e8;
+            margin-right: 10px;
+        }
+        
+        .admin-icon {
+            color: #4a86e8;
+            margin-right: 10px;
+        }
+        
+        .alert {
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="card-header">
+                <div class="header-icon">
+                    <i class="fas fa-heartbeat"></i>
+                </div>
+                <h3>Medical Transcription System</h3>
+                <p>Access your healthcare information securely</p>
+            </div>
+            <div class="card-body">
+                <!-- Login alert for errors -->
+                <div class="alert alert-danger" id="login-error" style="display: none;">
+                    <strong>Error!</strong> <span id="error-message">Invalid username or password</span>
+                </div>
+
+                <ul class="nav nav-tabs" id="authTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="doctor-tab" data-bs-toggle="tab" data-bs-target="#doctor" type="button" role="tab" aria-controls="doctor" aria-selected="true">
+                            <i class="fas fa-user-md doctor-icon"></i>Doctor
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="patient-tab" data-bs-toggle="tab" data-bs-target="#patient" type="button" role="tab" aria-controls="patient" aria-selected="false">
+                            <i class="fas fa-user patient-icon"></i>Patient
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin" type="button" role="tab" aria-controls="admin" aria-selected="false">
+                            <i class="fas fa-user-shield admin-icon"></i>Admin
+                        </button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="authTabContent">
+                    <!-- Doctor Login Form -->
+                    <div class="tab-pane fade show active" id="doctor" role="tabpanel" aria-labelledby="doctor-tab">
+                        <form id="doctorLoginForm">
+                            <div class="mb-3">
+                                <label for="doctorUsername" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="doctorUsername" name="username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="doctorPassword" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="doctorPassword" name="password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Login</button>
+                            <div class="d-flex justify-content-between mt-3">
+                                <a href="#" class="btn-link" id="showDoctorRegistration">Register</a>
+                                <a href="#" class="btn-link">Forgot Password?</a>
+                            </div>
+                            <div class="mt-3 text-center">
+                                <small class="text-muted">Example: username=doctor, password=doctor123</small>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Patient Login Form -->
+                    <div class="tab-pane fade" id="patient" role="tabpanel" aria-labelledby="patient-tab">
+                        <form id="patientLoginForm">
+                            <div class="mb-3">
+                                <label for="patientId" class="form-label">Patient ID</label>
+                                <input type="text" class="form-control" id="patientId" name="patient_id" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="patientPassword" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="patientPassword" name="password" required>
+                                <div class="form-text">
+                                    Password format: PatientID_DDMM_YYYY
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Login</button>
+                            <div class="mt-3 text-center">
+                                <small class="text-muted">Example: ID=P00001, password=patient123</small>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Admin Login Form -->
+                    <div class="tab-pane fade" id="admin" role="tabpanel" aria-labelledby="admin-tab">
+                        <form id="adminLoginForm">
+                            <div class="mb-3">
+                                <label for="adminUsername" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="adminUsername" name="username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="adminPassword" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="adminPassword" name="password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Login</button>
+                            <div class="mt-3 text-center">
+                                <small class="text-muted">Example: username=admin, password=admin123</small>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Doctor Registration Form (Hidden initially) -->
+                <div id="doctorRegistrationForm" style="display: none;">
+                    <h4 class="mb-3">Doctor Registration</h4>
+                    <form id="registerDoctorForm">
+                        <div class="mb-3">
+                            <label for="regUsername" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="regUsername" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="regEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="regEmail" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="regFullName" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="regFullName" name="full_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="regPassword" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="regPassword" name="password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="regConfirmPassword" class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" id="regConfirmPassword" required>
+                        </div>
+                        <input type="hidden" name="role" value="doctor">
+                        <button type="submit" class="btn btn-primary">Register</button>
+                        <div class="d-flex justify-content-center mt-3">
+                            <a href="#" class="btn-link" id="showDoctorLogin">Back to Login</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle between login and registration forms
+            document.getElementById('showDoctorRegistration').addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('authTabContent').style.display = 'none';
+                document.getElementById('doctorRegistrationForm').style.display = 'block';
+            });
+
+            document.getElementById('showDoctorLogin').addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('authTabContent').style.display = 'block';
+                document.getElementById('doctorRegistrationForm').style.display = 'none';
+            });
+
+            // Helper function to handle login
+            function handleLogin(username, password, redirectPath, errorCallback) {
+                // Create form data
+                const formData = new FormData();
+                formData.append('username', username);
+                formData.append('password', password);
+                
+                // Send login request
+                fetch('/token', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Login failed');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Login successful:", data);
+                    
+                    // Store token in localStorage
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('token_type', data.token_type);
+                    localStorage.setItem('user_role', data.user_role);
+                    
+                    // Set auth cookie for server-side requests
+                    document.cookie = `Authorization=${data.token_type} ${data.access_token}; path=/; SameSite=Strict`;
+                    console.log('Auth cookie set for dashboard access');
+                    
+                    // Redirect based on role
+                    if (data.user_role === 'doctor') {
+                        window.location.href = '/dashboard';
+                    } else if (data.user_role === 'patient') {
+                        window.location.href = '/dashboard';
+                    } else if (data.user_role === 'admin') {
+                        window.location.href = '/admin';
+                    } else {
+                        window.location.href = redirectPath || '/dashboard';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error during login:', error);
+                    const errorElement = document.getElementById('login-error');
+                    errorElement.style.display = 'block';
+                    document.getElementById('error-message').textContent = 'Login failed. Please check your credentials.';
+                    
+                    if (errorCallback) {
+                        errorCallback(error);
+                    }
+                });
+            }
+
+            // Doctor login form submission
+            document.getElementById('doctorLoginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const username = document.getElementById('doctorUsername').value;
+                const password = document.getElementById('doctorPassword').value;
+                handleLogin(username, password, '/dashboard');
+            });
+
+            // Admin login form submission
+            document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const username = document.getElementById('adminUsername').value;
+                const password = document.getElementById('adminPassword').value;
+                handleLogin(username, password, '/admin');
+            });
+
+            // Patient login form submission
+            document.getElementById('patientLoginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const patientId = document.getElementById('patientId').value;
+                const password = document.getElementById('patientPassword').value;
+                
+                // For patients we use a different endpoint
+                const formData = new FormData();
+                formData.append('patient_id', patientId);
+                formData.append('password', password);
+                
+                // Send login request
+                fetch('/patient-login', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Login failed');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Patient login successful:", data);
+                    
+                    // Store token in localStorage
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('token_type', data.token_type);
+                    localStorage.setItem('user_role', data.user_role);
+                    
+                    // Set auth cookie for server-side requests
+                    document.cookie = `Authorization=${data.token_type} ${data.access_token}; path=/; SameSite=Strict`;
+                    console.log('Auth cookie set for dashboard access');
+                    
+                    // Redirect to dashboard
+                    window.location.href = '/dashboard';
+                })
+                .catch(error => {
+                    console.error('Error during patient login:', error);
+                    const errorElement = document.getElementById('login-error');
+                    errorElement.style.display = 'block';
+                    document.getElementById('error-message').textContent = 'Patient login failed. Please check your ID and password.';
+                });
+            });
+
+            // Doctor registration form submission
+            document.getElementById('registerDoctorForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const password = document.getElementById('regPassword').value;
+                const confirmPassword = document.getElementById('regConfirmPassword').value;
+                
+                if (password !== confirmPassword) {
+                    alert('Passwords do not match');
+                    return;
+                }
+                
+                // Create request data
+                const registerData = {
+                    username: document.getElementById('regUsername').value,
+                    email: document.getElementById('regEmail').value,
+                    password: password,
+                    full_name: document.getElementById('regFullName').value,
+                    role: 'doctor'
+                };
+                
+                // Send registration request
+                fetch('/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(registerData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.detail || 'Registration failed');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert('Registration successful! Please login.');
+                    document.getElementById('showDoctorLogin').click();
+                })
+                .catch(error => {
+                    alert(error.message);
+                    console.error('Error:', error);
+                });
+            });
+        });
+    </script>
+</body>
+</html> 

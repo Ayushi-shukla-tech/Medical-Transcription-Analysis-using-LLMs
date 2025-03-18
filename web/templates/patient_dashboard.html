@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Dashboard - Medical Transcription System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="/static/js/auth.js"></script>
+    <style>
+        :root {
+            --primary-color: #4a86e8;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100vh;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-header {
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+        }
+        
+        .sidebar-logo {
+            color: var(--primary-color);
+            font-size: 24px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo-icon {
+            margin-right: 10px;
+            font-size: 28px;
+        }
+        
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar-menu li {
+            margin-bottom: 10px;
+        }
+        
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            color: var(--secondary-color);
+            border-radius: 5px;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            background-color: rgba(74, 134, 232, 0.1);
+            color: var(--primary-color);
+        }
+        
+        .sidebar-menu i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            padding: 30px;
+            transition: all 0.3s;
+        }
+        
+        .navbar {
+            background-color: #fff;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+            padding: 15px 30px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+        }
+        
+        .navbar .user-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .welcome-text {
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+            transition: transform 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            background-color: #fff;
+            border-bottom: 1px solid #eee;
+            padding: 20px;
+            font-weight: 600;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        .info-card {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .info-card h5 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .info-card .info-item {
+            margin-bottom: 10px;
+            display: flex;
+        }
+        
+        .info-card .info-label {
+            font-weight: 600;
+            width: 120px;
+            color: var(--secondary-color);
+        }
+        
+        .info-card .info-value {
+            flex: 1;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background-color: #3a76d8;
+        }
+        
+        .table {
+            border-collapse: separate;
+            border-spacing: 0 8px;
+        }
+        
+        .table thead th {
+            border-bottom: none;
+            font-weight: 600;
+            color: var(--secondary-color);
+        }
+        
+        .table tbody tr {
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            border-radius: 5px;
+        }
+        
+        .table tbody td {
+            padding: 15px;
+            vertical-align: middle;
+        }
+        
+        .table tbody tr td:first-child {
+            border-top-left-radius: 5px;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .table tbody tr td:last-child {
+            border-top-right-radius: 5px;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .report-card {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 0;
+            margin-bottom: 30px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+        
+        .report-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .report-body {
+            padding: 20px;
+        }
+        
+        .report-section {
+            margin-bottom: 20px;
+        }
+        
+        .report-section h6 {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .medical-tag {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .tag-medication {
+            background-color: rgba(74, 134, 232, 0.1);
+            color: var(--primary-color);
+        }
+        
+        .tag-symptom {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: var(--danger-color);
+        }
+        
+        .tag-test {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: var(--success-color);
+        }
+        
+        .tag-cause {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: var(--warning-color);
+        }
+        
+        .tag-precaution {
+            background-color: rgba(23, 162, 184, 0.1);
+            color: var(--info-color);
+        }
+        
+        .audio-player {
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .transcript-container {
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="fas fa-heartbeat logo-icon"></i>
+                MedTranscribe
+            </div>
+        </div>
+        <ul class="sidebar-menu">
+            <li>
+                <a href="/dashboard" class="active">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="#" data-section="recordings">
+                    <i class="fas fa-microphone"></i>
+                    My Recordings
+                </a>
+            </li>
+            <li>
+                <a href="#" data-section="reports">
+                    <i class="fas fa-file-medical"></i>
+                    My Reports
+                </a>
+            </li>
+            <li>
+                <a href="#" data-section="profile">
+                    <i class="fas fa-user"></i>
+                    My Profile
+                </a>
+            </li>
+            <li>
+                <a href="/logout" id="logoutLink">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Navbar -->
+        <div class="navbar">
+            <h4 class="mb-0">Patient Dashboard</h4>
+            <div class="user-info">
+                <div class="user-avatar">
+                    {{ user.full_name[0] | upper }}
+                </div>
+                <div class="welcome-text">
+                    Welcome, {{ user.full_name }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Sections -->
+        <div id="dashboardSection" class="dashboard-section">
+            <!-- Profile Information -->
+            <div class="info-card">
+                <h5><i class="fas fa-user-circle me-2"></i>Your Information</h5>
+                <div class="info-item">
+                    <div class="info-label">Patient ID:</div>
+                    <div class="info-value">{{ patient.patient_id }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Name:</div>
+                    <div class="info-value">{{ patient.name }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Age:</div>
+                    <div class="info-value">{{ patient.age }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Sex:</div>
+                    <div class="info-value">{{ patient.sex }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Phone:</div>
+                    <div class="info-value">{{ patient.mobile_number }}</div>
+                </div>
+            </div>
+
+            <!-- Recent Reports -->
+            <div class="card" id="recentReportsCard">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Recent Medical Reports</span>
+                    <button class="btn btn-sm btn-outline-primary" data-section="reports">View All</button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table" id="reportsTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Doctor</th>
+                                    <th>Summary</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4" class="text-center">Loading reports...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recordings Section (Hidden initially) -->
+        <div id="recordingsSection" class="dashboard-section" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <span>My Recordings</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table" id="recordingsListTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Doctor</th>
+                                    <th>Duration</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="5" class="text-center">Loading recordings...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Section (Hidden initially) -->
+        <div id="reportsSection" class="dashboard-section" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <span>My Reports</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table" id="reportsListTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Doctor</th>
+                                    <th>Summary</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4" class="text-center">Loading reports...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Section (Hidden initially) -->
+        <div id="profileSection" class="dashboard-section" style="display: none;">
+            <div class="info-card">
+                <h5><i class="fas fa-user-circle me-2"></i>Personal Information</h5>
+                <div class="info-item">
+                    <div class="info-label">Patient ID:</div>
+                    <div class="info-value">{{ patient.patient_id }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Name:</div>
+                    <div class="info-value">{{ patient.name }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Age:</div>
+                    <div class="info-value">{{ patient.age }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Sex:</div>
+                    <div class="info-value">{{ patient.sex }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Date of Birth:</div>
+                    <div class="info-value">{{ patient.date_of_birth.strftime('%d %B, %Y') }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Phone:</div>
+                    <div class="info-value">{{ patient.mobile_number }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Username:</div>
+                    <div class="info-value">{{ user.username }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Email:</div>
+                    <div class="info-value">{{ user.email }}</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>Account Settings</span>
+                </div>
+                <div class="card-body">
+                    <form id="changePasswordForm">
+                        <h6 class="mb-3">Change Password</h6>
+                        <div class="mb-3">
+                            <label for="currentPassword" class="form-label">Current Password</label>
+                            <input type="password" class="form-control" id="currentPassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="newPassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control" id="confirmPassword" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update Password</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Detail Modal -->
+    <div class="modal fade" id="reportDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Medical Report Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="report-card">
+                        <div class="report-header">
+                            <div>
+                                <h5 class="mb-0" id="reportDate">Report Date</h5>
+                                <small id="reportDoctor">Doctor Name</small>
+                            </div>
+                            <a href="#" class="btn btn-sm btn-light" id="downloadReportBtn">
+                                <i class="fas fa-download me-1"></i> Download
+                            </a>
+                        </div>
+                        <div class="report-body">
+                            <div class="report-section">
+                                <h6>Summary</h6>
+                                <p id="reportSummary">Loading summary...</p>
+                            </div>
+                            
+                            <div class="report-section">
+                                <h6>Medications</h6>
+                                <div class="tag-list" id="medicationTags">
+                                    <div class="medical-tag tag-medication">Loading...</div>
+                                </div>
+                            </div>
+                            
+                            <div class="report-section">
+                                <h6>Symptoms</h6>
+                                <div class="tag-list" id="symptomTags">
+                                    <div class="medical-tag tag-symptom">Loading...</div>
+                                </div>
+                            </div>
+                            
+                            <div class="report-section">
+                                <h6>Tests Recommended</h6>
+                                <div class="tag-list" id="testTags">
+                                    <div class="medical-tag tag-test">Loading...</div>
+                                </div>
+                            </div>
+                            
+                            <div class="report-section">
+                                <h6>Causes</h6>
+                                <div class="tag-list" id="causeTags">
+                                    <div class="medical-tag tag-cause">Loading...</div>
+                                </div>
+                            </div>
+                            
+                            <div class="report-section">
+                                <h6>Precautions</h6>
+                                <div class="tag-list" id="precautionTags">
+                                    <div class="medical-tag tag-precaution">Loading...</div>
+                                </div>
+                            </div>
+                            
+                            <div class="report-section">
+                                <h6>Full Report</h6>
+                                <p id="fullReport">Loading full report...</p>
+                            </div>
+                            
+                            <div class="report-section">
+                                <h6>Audio Recording</h6>
+                                <audio controls class="audio-player" id="recordingAudio">
+                                    <source src="" type="audio/wav">
+                                    Your browser does not support the audio element.
+                                </audio>
+                            </div>
+                            
+                            <div class="report-section">
+                                <h6>Transcription</h6>
+                                <div class="transcript-container" id="transcriptionText">
+                                    Loading transcription...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication
+            if (!isLoggedIn() || getUserRole() !== 'patient') {
+                window.location.href = '/';
+                return;
+            }
+            
+            // Set auth cookie for server-side auth
+            setAuthCookie();
+            
+            // Get token from localStorage
+            const token = localStorage.getItem('token');
+            
+            // Set up headers for API calls
+            const headers = {
+                'Authorization': `Bearer ${token}`
+            };
+            
+            // Handle sidebar navigation
+            const navLinks = document.querySelectorAll('.sidebar-menu a[data-section]');
+            const sections = document.querySelectorAll('.dashboard-section');
+            const mainSummary = document.getElementById('mainSummary');
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Get the section to show
+                    const sectionId = this.getAttribute('data-section');
+                    
+                    // Hide all sections and remove active class
+                    sections.forEach(section => section.style.display = 'none');
+                    navLinks.forEach(link => link.classList.remove('active'));
+                    
+                    // Hide main summary
+                    mainSummary.style.display = 'none';
+                    
+                    // Show the selected section and add active class
+                    document.getElementById(sectionId + 'Section').style.display = 'block';
+                    this.classList.add('active');
+                });
+            });
+            
+            // Also handle buttons that navigate to sections
+            const sectionButtons = document.querySelectorAll('button[data-section]');
+            sectionButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const sectionId = this.getAttribute('data-section');
+                    
+                    // Hide all sections and remove active class
+                    sections.forEach(section => section.style.display = 'none');
+                    navLinks.forEach(link => link.classList.remove('active'));
+                    
+                    // Hide main summary
+                    mainSummary.style.display = 'none';
+                    
+                    // Show the selected section and add active class
+                    document.getElementById(sectionId + 'Section').style.display = 'block';
+                    document.querySelector(`.sidebar-menu a[data-section="${sectionId}"]`).classList.add('active');
+                });
+            });
+            
+            // Report modal event handlers
+            const reportDetailModal = document.getElementById('reportDetailModal');
+            reportDetailModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const reportId = button.getAttribute('data-report-id');
+                loadReportDetails(reportId);
+            });
+            
+            // Fetch data from API
+            loadPatientData();
+            
+            function loadPatientData() {
+                // Fetch recordings
+                fetch('/api/patient/recordings', {
+                    headers: headers
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch recordings');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Populate recordings table
+                    populateRecordingsTable(data.recordings);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    const tableBody = document.getElementById('recordingsListTable').querySelector('tbody');
+                    tableBody.innerHTML = '<tr><td colspan="5" class="text-center">Error loading recordings. Please try again.</td></tr>';
+                });
+                
+                // Fetch reports
+                fetch('/api/patient/reports', {
+                    headers: headers
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch reports');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Populate reports tables
+                    populateReportsTable('reportsTable', data.reports);
+                    populateReportsTable('reportsListTable', data.reports);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    const tableBody = document.getElementById('reportsTable').querySelector('tbody');
+                    tableBody.innerHTML = '<tr><td colspan="4" class="text-center">Error loading reports. Please try again.</td></tr>';
+                    
+                    const listTableBody = document.getElementById('reportsListTable').querySelector('tbody');
+                    listTableBody.innerHTML = '<tr><td colspan="4" class="text-center">Error loading reports. Please try again.</td></tr>';
+                });
+            }
+            
+            function populateReportsTable(tableId, reports) {
+                const tableBody = document.getElementById(tableId).querySelector('tbody');
+                tableBody.innerHTML = '';
+                
+                if (reports.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="4" class="text-center">No reports found</td></tr>';
+                    return;
+                }
+                
+                // Show only the first 5 in the main dashboard table
+                const displayReports = tableId === 'reportsTable' ? reports.slice(0, 5) : reports;
+                
+                displayReports.forEach(report => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${new Date(report.date).toLocaleDateString()}</td>
+                        <td>${report.doctor_name}</td>
+                        <td>${report.summary.substring(0, 100)}${report.summary.length > 100 ? '...' : ''}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#reportDetailModal" data-report-id="${report.id}">
+                                <i class="fas fa-eye me-1"></i> View
+                            </button>
+                            <a href="/download-report/${report.id}" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-download me-1"></i> Download
+                            </a>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+            
+            function populateRecordingsTable(recordings) {
+                const tableBody = document.getElementById('recordingsListTable').querySelector('tbody');
+                tableBody.innerHTML = '';
+                
+                if (recordings.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="5" class="text-center">No recordings found</td></tr>';
+                    return;
+                }
+                
+                recordings.forEach(recording => {
+                    const row = document.createElement('tr');
+                    const date = new Date(recording.date).toLocaleDateString();
+                    const duration = formatDuration(recording.duration);
+                    
+                    row.innerHTML = `
+                        <td>${date}</td>
+                        <td>${recording.doctor_name}</td>
+                        <td>${duration}</td>
+                        <td>${recording.has_transcription ? 'Available' : 'Processing...'}</td>
+                        <td>
+                            <a href="/api/patient/recording/${recording.id}" class="btn btn-sm btn-outline-info me-1" target="_blank">
+                                <i class="fas fa-play me-1"></i> Play
+                            </a>
+                            ${recording.has_report ? 
+                                `<button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#reportDetailModal" data-report-id="${recording.report_id}">
+                                    <i class="fas fa-file-medical me-1"></i> View Report
+                                </button>` : 
+                                `<button class="btn btn-sm btn-outline-secondary me-1" disabled>
+                                    <i class="fas fa-hourglass-half me-1"></i> Report Pending
+                                </button>`
+                            }
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+            
+            function formatDuration(seconds) {
+                if (!seconds) return '00:00';
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+            }
+            
+            function loadReportDetails(reportId) {
+                // Show loading state
+                document.getElementById('reportSummary').textContent = 'Loading...';
+                document.getElementById('reportDate').textContent = 'Loading...';
+                document.getElementById('reportDoctor').textContent = '';
+                document.getElementById('fullReport').textContent = 'Loading...';
+                
+                // Empty all lists
+                document.getElementById('medicationTags').innerHTML = '';
+                document.getElementById('symptomTags').innerHTML = '';
+                document.getElementById('testTags').innerHTML = '';
+                document.getElementById('causeTags').innerHTML = '';
+                document.getElementById('precautionTags').innerHTML = '';
+                
+                // Set download link
+                document.getElementById('downloadReportBtn').href = `/download-report/${reportId}`;
+                
+                // Fetch report details from API
+                fetch(`/api/patient/report/${reportId}`, {
+                    headers: headers
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch report details');
+                    }
+                    return response.json();
+                })
+                .then(report => {
+                    // Update modal with report details
+                    document.getElementById('reportDate').textContent = `Report Date: ${new Date(report.date).toLocaleDateString()}`;
+                    document.getElementById('reportDoctor').textContent = report.doctor_name;
+                    document.getElementById('reportSummary').textContent = report.summary;
+                    document.getElementById('fullReport').textContent = report.full_report;
+                    
+                    // Fill medications list
+                    const medicationsList = document.getElementById('medicationTags');
+                    medicationsList.innerHTML = '';
+                    if (report.medications && report.medications.length > 0) {
+                        report.medications.forEach(med => {
+                            const li = document.createElement('li');
+                            li.textContent = med;
+                            medicationsList.appendChild(li);
+                        });
+                    } else {
+                        medicationsList.innerHTML = '<li>No medications specified</li>';
+                    }
+                    
+                    // Fill symptoms list
+                    const symptomsList = document.getElementById('symptomTags');
+                    symptomsList.innerHTML = '';
+                    if (report.symptoms && report.symptoms.length > 0) {
+                        report.symptoms.forEach(symptom => {
+                            const li = document.createElement('li');
+                            li.textContent = symptom;
+                            symptomsList.appendChild(li);
+                        });
+                    } else {
+                        symptomsList.innerHTML = '<li>No symptoms specified</li>';
+                    }
+                    
+                    // Fill tests list
+                    const testsList = document.getElementById('testTags');
+                    testsList.innerHTML = '';
+                    if (report.tests && report.tests.length > 0) {
+                        report.tests.forEach(test => {
+                            const li = document.createElement('li');
+                            li.textContent = test;
+                            testsList.appendChild(li);
+                        });
+                    } else {
+                        testsList.innerHTML = '<li>No tests recommended</li>';
+                    }
+                    
+                    // Fill causes list
+                    const causesList = document.getElementById('causeTags');
+                    causesList.innerHTML = '';
+                    if (report.causes && report.causes.length > 0) {
+                        report.causes.forEach(cause => {
+                            const li = document.createElement('li');
+                            li.textContent = cause;
+                            causesList.appendChild(li);
+                        });
+                    } else {
+                        causesList.innerHTML = '<li>No causes identified</li>';
+                    }
+                    
+                    // Fill precautions list
+                    const precautionsList = document.getElementById('precautionTags');
+                    precautionsList.innerHTML = '';
+                    if (report.precautions && report.precautions.length > 0) {
+                        report.precautions.forEach(precaution => {
+                            const li = document.createElement('li');
+                            li.textContent = precaution;
+                            precautionsList.appendChild(li);
+                        });
+                    } else {
+                        precautionsList.innerHTML = '<li>No precautions recommended</li>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error loading report details. Please try again.');
+                });
+            }
+            
+            // Logout event
+            document.getElementById('logoutLink').addEventListener('click', function(e) {
+                e.preventDefault();
+                logout();
+            });
+        });
+    </script>
+</body>
+</html> 

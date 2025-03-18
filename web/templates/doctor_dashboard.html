@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard - Medical Transcription System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="/static/js/auth.js"></script>
+    <style>
+        :root {
+            --primary-color: #4a86e8;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100vh;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-header {
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+        }
+        
+        .sidebar-logo {
+            color: var(--primary-color);
+            font-size: 24px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo-icon {
+            margin-right: 10px;
+            font-size: 28px;
+        }
+        
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar-menu li {
+            margin-bottom: 10px;
+        }
+        
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            color: var(--secondary-color);
+            border-radius: 5px;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            background-color: rgba(74, 134, 232, 0.1);
+            color: var(--primary-color);
+        }
+        
+        .sidebar-menu i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            padding: 30px;
+            transition: all 0.3s;
+        }
+        
+        .navbar {
+            background-color: #fff;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+            padding: 15px 30px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+        }
+        
+        .navbar .user-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .welcome-text {
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+            transition: transform 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            background-color: #fff;
+            border-bottom: 1px solid #eee;
+            padding: 20px;
+            font-weight: 600;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        .stat-card {
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card.primary {
+            background-color: var(--primary-color);
+        }
+        
+        .stat-card.success {
+            background-color: var(--success-color);
+        }
+        
+        .stat-card.info {
+            background-color: var(--info-color);
+        }
+        
+        .stat-icon {
+            font-size: 36px;
+            opacity: 0.8;
+        }
+        
+        .stat-info h3 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        
+        .stat-info p {
+            margin-bottom: 0;
+            opacity: 0.8;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background-color: #3a76d8;
+        }
+        
+        .table {
+            border-collapse: separate;
+            border-spacing: 0 8px;
+        }
+        
+        .table thead th {
+            border-bottom: none;
+            font-weight: 600;
+            color: var(--secondary-color);
+        }
+        
+        .table tbody tr {
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            border-radius: 5px;
+        }
+        
+        .table tbody td {
+            padding: 15px;
+            vertical-align: middle;
+        }
+        
+        .table tbody tr td:first-child {
+            border-top-left-radius: 5px;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .table tbody tr td:last-child {
+            border-top-right-radius: 5px;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .patient-status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: var(--success-color);
+        }
+        
+        .status-pending {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+        }
+        
+        .modal-content {
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .modal-header {
+            border-bottom: 1px solid #eee;
+            padding: 20px;
+        }
+        
+        .modal-footer {
+            border-top: 1px solid #eee;
+            padding: 20px;
+        }
+        
+        .recording-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .recording-controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            width: 100%;
+        }
+        
+        .recording-controls button {
+            margin: 0 10px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .recording-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: red;
+            margin-right: 10px;
+            animation: blink 1.5s linear infinite;
+        }
+        
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        
+        .visualizer {
+            width: 100%;
+            height: 100px;
+            background-color: #fff;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .form-select {
+            border-radius: 5px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(74, 134, 232, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="fas fa-heartbeat logo-icon"></i>
+                MedTranscribe
+            </div>
+        </div>
+        <ul class="sidebar-menu">
+            <li>
+                <a href="/dashboard" class="active">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="/patients">
+                    <i class="fas fa-users"></i>
+                    Patients
+                </a>
+            </li>
+            <li>
+                <a href="#" data-bs-toggle="modal" data-bs-target="#recordModal">
+                    <i class="fas fa-microphone"></i>
+                    Record Session
+                </a>
+            </li>
+            <li>
+                <a href="#" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                    <i class="fas fa-upload"></i>
+                    Upload Recording
+                </a>
+            </li>
+            <li>
+                <a href="#" data-bs-toggle="modal" data-bs-target="#addPatientModal">
+                    <i class="fas fa-user-plus"></i>
+                    Add Patient
+                </a>
+            </li>
+            <li>
+                <a href="/logout" id="logoutLink">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Navbar -->
+        <div class="navbar">
+            <h4 class="mb-0">Doctor Dashboard</h4>
+            <div class="user-info">
+                <div class="user-avatar">
+                    {{ user.full_name[0] | upper }}
+                </div>
+                <div class="welcome-text">
+                    Welcome, Dr. {{ user.full_name }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row">
+            <div class="col-md-4">
+                <div class="stat-card primary">
+                    <div class="stat-info">
+                        <h3 id="totalPatients">0</h3>
+                        <p>Total Patients</p>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card success">
+                    <div class="stat-info">
+                        <h3 id="totalRecordings">0</h3>
+                        <p>Recordings</p>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-microphone"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card info">
+                    <div class="stat-info">
+                        <h3 id="totalReports">0</h3>
+                        <p>Reports Generated</p>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-file-medical"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Patients -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Recent Patients</span>
+                <a href="/patients" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table" id="patientsTable">
+                        <thead>
+                            <tr>
+                                <th>Patient ID</th>
+                                <th>Name</th>
+                                <th>Age</th>
+                                <th>Sex</th>
+                                <th>Date Added</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="6" class="text-center">Loading patients...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Recordings -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Recent Recordings</span>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table" id="recordingsTable">
+                        <thead>
+                            <tr>
+                                <th>Patient</th>
+                                <th>Recording Date</th>
+                                <th>Duration</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="5" class="text-center">Loading recordings...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Patient Modal -->
+    <div class="modal fade" id="addPatientModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Patient</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addPatientForm">
+                        <div class="mb-3">
+                            <label for="patientName" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="patientName" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="patientAge" class="form-label">Age</label>
+                            <input type="number" class="form-control" id="patientAge" name="age" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="patientSex" class="form-label">Sex</label>
+                            <select class="form-select" id="patientSex" name="sex" required>
+                                <option value="">Select</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="patientDob" class="form-label">Date of Birth</label>
+                            <input type="date" class="form-control" id="patientDob" name="date_of_birth" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="patientMobile" class="form-label">Mobile Number</label>
+                            <input type="tel" class="form-control" id="patientMobile" name="mobile_number" pattern="[0-9]{10}" required>
+                            <small class="form-text text-muted">10-digit mobile number</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="savePatientBtn">Save Patient</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Record Modal -->
+    <div class="modal fade" id="recordModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Record Patient Session</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="recordPatientSelect" class="form-label">Select Patient</label>
+                        <select class="form-select" id="recordPatientSelect" required>
+                            <option value="">Select a patient</option>
+                        </select>
+                    </div>
+                    <div class="recording-container">
+                        <canvas id="visualizer" class="visualizer"></canvas>
+                        <div id="recordingStatus">Click Record to start</div>
+                        <div class="recording-controls">
+                            <button type="button" class="btn btn-danger" id="recordBtn">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                            <button type="button" class="btn btn-warning" id="pauseBtn" disabled>
+                                <i class="fas fa-pause"></i>
+                            </button>
+                            <button type="button" class="btn btn-success" id="stopBtn" disabled>
+                                <i class="fas fa-stop"></i>
+                            </button>
+                        </div>
+                        <div class="mt-3" id="recordingTime">00:00</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveRecordingBtn" disabled>Save Recording</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div class="modal fade" id="uploadModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Upload Recording</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="uploadForm">
+                        <div class="mb-3">
+                            <label for="uploadPatientSelect" class="form-label">Select Patient</label>
+                            <select class="form-select" id="uploadPatientSelect" name="patient_id" required>
+                                <option value="">Select a patient</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="recordingFile" class="form-label">Audio File (.wav only)</label>
+                            <input type="file" class="form-control" id="recordingFile" name="audio_file" accept=".wav" required>
+                            <small class="form-text text-muted">Only .wav files are supported</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="uploadRecordingBtn">Upload</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient Added Success Modal -->
+    <div class="modal fade" id="patientAddedModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Patient Added Successfully</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-success mb-3">
+                        <h5>Patient Information</h5>
+                        <p><strong>Patient ID:</strong> <span id="newPatientId"></span></p>
+                        <p><strong>Password:</strong> <span id="newPatientPassword"></span></p>
+                        <p class="mb-0">Please share these credentials with the patient for login.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM fully loaded. Initializing doctor dashboard...');
+            
+            // Check authentication - support both token and access_token keys
+            let token = localStorage.getItem('token');
+            if (!token) {
+                token = localStorage.getItem('access_token');
+                if (token) {
+                    // Store with the expected key name for consistency
+                    localStorage.setItem('token', token);
+                    console.log('Token found with alternate key name and saved');
+                }
+            }
+            
+            // Check both user_role and role keys
+            let userRole = localStorage.getItem('user_role');
+            if (!userRole) {
+                userRole = localStorage.getItem('role');
+            }
+            
+            if (!token || userRole !== 'doctor') {
+                console.error('Authentication failed or not a doctor role');
+                window.location.href = '/';
+                return;
+            }
+            
+            console.log('Authentication successful. User role:', userRole);
+            
+            // Set auth cookie for server-side auth if needed
+            if (typeof setAuthCookie === 'function') {
+                setAuthCookie();
+            } else {
+                console.warn('setAuthCookie function not available, skipping cookie setup');
+            }
+            
+            // Set up headers for API calls
+            const headers = {
+                'Authorization': `Bearer ${token}`
+            };
+            
+            // Recording variables
+            let mediaRecorder = null;
+            let audioChunks = [];
+            let recordingSeconds = 0;
+            let recordingTimer;
+            let audioBlob = null;
+            
+            // Get DOM elements for recording functionality
+            const recordBtn = document.getElementById('recordBtn');
+            const pauseBtn = document.getElementById('pauseBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const saveRecordingBtn = document.getElementById('saveRecordingBtn');
+            const recordingStatus = document.getElementById('recordingStatus');
+            const recordingTime = document.getElementById('recordingTime');
+            const visualizer = document.getElementById('visualizer');
+            const recordPatientSelect = document.getElementById('recordPatientSelect');
+            
+            // Debug helper function
+            function logDebug(message, data = null) {
+                console.log(`[DEBUG] ${message}`, data || '');
+            }
+            
+            // Recording functions
+            function startRecording() {
+                logDebug('Starting recording function...');
+                
+                // Validate patient selection
+                if (!recordPatientSelect.value) {
+                    alert('Please select a patient before recording');
+                    logDebug('No patient selected, recording aborted');
+                    return;
+                }
+                
+                logDebug('Selected patient ID:', recordPatientSelect.value);
+                
+                // Reset recording state
+                audioChunks = [];
+                recordingSeconds = 0;
+                recordingTime.textContent = '00:00';
+                
+                // Request microphone access
+                logDebug('Requesting microphone access...');
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then(stream => {
+                        logDebug('Microphone access granted');
+                        
+                        // Set up media recorder with correct MIME type
+                        try {
+                            mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                            logDebug('MediaRecorder created with MIME type: audio/webm');
+                        } catch (e) {
+                            // Fallback to default type if webm not supported
+                            mediaRecorder = new MediaRecorder(stream);
+                            logDebug('MediaRecorder created with default MIME type');
+                        }
+                        
+                        // Set up data handler
+                        mediaRecorder.ondataavailable = event => {
+                            if (event.data.size > 0) {
+                                audioChunks.push(event.data);
+                                logDebug(`Audio chunk received, size: ${event.data.size} bytes`);
+                            }
+                        };
+                        
+                        // Set up handlers for recorder states
+                        mediaRecorder.onstart = () => {
+                            logDebug('MediaRecorder started');
+                        };
+                        
+                        mediaRecorder.onpause = () => {
+                            logDebug('MediaRecorder paused');
+                        };
+                        
+                        mediaRecorder.onresume = () => {
+                            logDebug('MediaRecorder resumed');
+                        };
+                        
+                        mediaRecorder.onstop = () => {
+                            logDebug('MediaRecorder stopped, processing chunks...');
+                            audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                            logDebug(`Audio blob created, size: ${audioBlob.size} bytes, type: ${audioBlob.type}`);
+                            
+                            // Enable save button
+                            saveRecordingBtn.disabled = false;
+                            
+                            // Stop all tracks
+                            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                        };
+                        
+                        // Start recording
+                        mediaRecorder.start(1000); // Capture data in 1-second chunks
+                        recordingStatus.textContent = 'Recording...';
+                        
+                        // Update UI
+                        recordBtn.disabled = true;
+                        pauseBtn.disabled = false;
+                        stopBtn.disabled = false;
+                        saveRecordingBtn.disabled = true;
+                        
+                        // Start timer
+                        recordingTimer = setInterval(updateRecordingTime, 1000);
+                        
+                        // Set up visualizer
+                        setupVisualizer(stream);
+                    })
+                    .catch(error => {
+                        console.error('Error accessing microphone:', error);
+                        alert('Error accessing microphone: ' + error.message);
+                        logDebug('Microphone access error', error);
+                    });
+            }
+            
+            function pauseRecording() {
+                logDebug('Pause/resume recording...');
+                if (!mediaRecorder) {
+                    logDebug('MediaRecorder not initialized');
+                    return;
+                }
+                
+                if (mediaRecorder.state === 'recording') {
+                    mediaRecorder.pause();
+                    recordingStatus.textContent = 'Paused';
+                    pauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    clearInterval(recordingTimer);
+                    logDebug('Recording paused');
+                } else if (mediaRecorder.state === 'paused') {
+                    mediaRecorder.resume();
+                    recordingStatus.textContent = 'Recording...';
+                    pauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    recordingTimer = setInterval(updateRecordingTime, 1000);
+                    logDebug('Recording resumed');
+                }
+            }
+            
+            function stopRecording() {
+                logDebug('Stopping recording...');
+                if (!mediaRecorder) {
+                    logDebug('MediaRecorder not initialized');
+                    return;
+                }
+                
+                if (mediaRecorder.state === 'recording' || mediaRecorder.state === 'paused') {
+                    mediaRecorder.stop();
+                    recordingStatus.textContent = 'Recording stopped';
+                    
+                    // Update UI
+                    recordBtn.disabled = false;
+                    pauseBtn.disabled = true;
+                    stopBtn.disabled = true;
+                    
+                    // Stop timer
+                    clearInterval(recordingTimer);
+                    logDebug('Recording stopped, waiting for ondataavailable event');
+                } else {
+                    logDebug('MediaRecorder already stopped');
+                }
+            }
+            
+            function updateRecordingTime() {
+                recordingSeconds++;
+                const minutes = Math.floor(recordingSeconds / 60);
+                const seconds = recordingSeconds % 60;
+                recordingTime.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+            
+            function setupVisualizer(stream) {
+                logDebug('Setting up audio visualizer...');
+                if (!visualizer) {
+                    logDebug('Visualizer canvas not found');
+                    return;
+                }
+                
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const source = audioContext.createMediaStreamSource(stream);
+                    const analyzer = audioContext.createAnalyser();
+                    analyzer.fftSize = 256;
+                    
+                    source.connect(analyzer);
+                    // Don't connect to destination to avoid feedback
+                    
+                    const bufferLength = analyzer.frequencyBinCount;
+                    const dataArray = new Uint8Array(bufferLength);
+                    
+                    const canvasCtx = visualizer.getContext('2d');
+                    const WIDTH = visualizer.width;
+                    const HEIGHT = visualizer.height;
+                    
+                    function draw() {
+                        requestAnimationFrame(draw);
+                        
+                        analyzer.getByteFrequencyData(dataArray);
+                        
+                        canvasCtx.fillStyle = 'rgb(255, 255, 255)';
+                        canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
+                        
+                        const barWidth = (WIDTH / bufferLength) * 2.5;
+                        let barHeight;
+                        let x = 0;
+                        
+                        for (let i = 0; i < bufferLength; i++) {
+                            barHeight = dataArray[i] / 2;
+                            
+                            canvasCtx.fillStyle = `rgb(${dataArray[i]}, 50, 50)`;
+                            canvasCtx.fillRect(x, HEIGHT - barHeight, barWidth, barHeight);
+                            
+                            x += barWidth + 1;
+                        }
+                    }
+                    
+                    draw();
+                    logDebug('Visualizer setup complete');
+                } catch (e) {
+                    console.error('Error setting up visualizer:', e);
+                    logDebug('Visualizer setup error', e);
+                }
+            }
+            
+            // Save recording function
+            function saveRecording() {
+                logDebug('Saving recording...');
+                if (!audioBlob) {
+                    alert('No recording to save');
+                    logDebug('No audio blob available');
+                    return;
+                }
+                
+                // Get selected patient
+                const patientId = recordPatientSelect.value;
+                if (!patientId) {
+                    alert('Please select a patient');
+                    logDebug('No patient selected for saving');
+                    return;
+                }
+                
+                // Get patient name for confirmation
+                const patientName = recordPatientSelect.options[recordPatientSelect.selectedIndex].text;
+                logDebug('Preparing to save recording for patient:', { id: patientId, name: patientName });
+                logDebug('Audio blob type:', audioBlob.type);
+                logDebug('Audio blob size:', audioBlob.size);
+                
+                // Confirm save with patient name
+                if (!confirm(`Save this recording for patient: ${patientName}?`)) {
+                    logDebug('Save recording canceled by user');
+                    return;
+                }
+                
+                // Convert to appropriate format
+                const fileExtension = audioBlob.type === 'audio/webm' ? '.webm' : '.wav';
+                const timestamp = Date.now();
+                const filename = `recording_${timestamp}${fileExtension}`;
+                
+                // Create form data with metadata
+                const formData = new FormData();
+                formData.append('patient_id', patientId);
+                formData.append('audio_file', audioBlob, filename);
+                formData.append('patient_name', patientName.split(' (')[0]); // Extract name without ID
+                formData.append('timestamp', timestamp);
+                formData.append('process_transcript', 'true'); // Request transcript processing
+                
+                // Show loading state
+                saveRecordingBtn.disabled = true;
+                saveRecordingBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+                
+                // Send to server
+                logDebug('Sending recording to server...');
+                fetch('/record-audio', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                })
+                .then(response => {
+                    logDebug('Server response received', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        headers: Object.fromEntries([...response.headers])
+                    });
+                    
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            try {
+                                // Try to parse as JSON
+                                const data = JSON.parse(text);
+                                throw new Error(data.detail || `Failed to save recording: ${response.status}`);
+                            } catch (e) {
+                                // If not JSON or parsing failed, use text
+                                throw new Error(`Failed to save recording: ${response.status} - ${text || response.statusText}`);
+                            }
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    logDebug('Recording saved successfully', data);
+                    
+                    // Check for transcript processing status
+                    let message = 'Recording saved successfully!';
+                    if (data.transcript_status === 'processing') {
+                        message += ' Transcript is being processed and will be available shortly.';
+                    } else if (data.transcript_status === 'completed') {
+                        message += ' Transcript has been processed and is available now.';
+                    }
+                    
+                    alert(message);
+                    
+                    // Reset recording state
+                    audioBlob = null;
+                    audioChunks = [];
+                    
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('recordModal'));
+                    if (modal) {
+                        modal.hide();
+                    } else {
+                        // Fallback if modal instance isn't available
+                        const recordModalEl = document.getElementById('recordModal');
+                        if (recordModalEl) {
+                            const bsModal = new bootstrap.Modal(recordModalEl);
+                            bsModal.hide();
+                        }
+                    }
+                    
+                    // Reset UI
+                    saveRecordingBtn.innerHTML = 'Save Recording';
+                    recordingStatus.textContent = 'Click Record to start';
+                    recordingTime.textContent = '00:00';
+                    
+                    // Refresh recordings list
+                    fetchRecordings();
+                    
+                    // Redirect to recording details if ID is provided
+                    if (data.recording_id) {
+                        setTimeout(() => {
+                            window.location.href = `/recording/${data.recording_id}`;
+                        }, 1000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving recording:', error);
+                    logDebug('Error saving recording', error);
+                    alert(`Error: ${error.message}`);
+                    saveRecordingBtn.innerHTML = 'Save Recording';
+                    saveRecordingBtn.disabled = false;
+                });
+            }
+            
+            // Event listeners for recording controls
+            if (recordBtn) recordBtn.addEventListener('click', startRecording);
+            if (pauseBtn) pauseBtn.addEventListener('click', pauseRecording);
+            if (stopBtn) stopBtn.addEventListener('click', stopRecording);
+            if (saveRecordingBtn) saveRecordingBtn.addEventListener('click', saveRecording);
+            
+            // Initialize canvas if it exists
+            if (visualizer) {
+                visualizer.width = visualizer.parentElement.clientWidth;
+                visualizer.height = 100;
+                const canvasCtx = visualizer.getContext('2d');
+                canvasCtx.fillStyle = 'rgb(255, 255, 255)';
+                canvasCtx.fillRect(0, 0, visualizer.width, visualizer.height);
+            }
+            
+            // Fetch patients for the doctor
+            function fetchPatients() {
+                logDebug('Fetching patients data...');
+                
+                // Show loading state in the dropdowns
+                if (recordPatientSelect) {
+                    recordPatientSelect.innerHTML = '<option value="">Loading patients...</option>';
+                }
+                
+                const uploadPatientSelect = document.getElementById('uploadPatientSelect');
+                if (uploadPatientSelect) {
+                    uploadPatientSelect.innerHTML = '<option value="">Loading patients...</option>';
+                }
+                
+                fetch('/patients', {
+                    method: 'GET', // Explicitly set method
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache' // Prevent caching
+                    }
+                })
+                .then(response => {
+                    logDebug('Patients API response received', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        headers: Object.fromEntries([...response.headers])
+                    });
+                    
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            try {
+                                // Try to parse as JSON
+                                const data = JSON.parse(text);
+                                throw new Error(data.detail || `Failed to fetch patients: ${response.status}`);
+                            } catch (e) {
+                                // If not JSON, use text
+                                throw new Error(`Failed to fetch patients: ${response.status} - ${text || response.statusText}`);
+                            }
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    logDebug('Patients data received', data);
+                    
+                    // Verify data structure
+                    if (!data || typeof data !== 'object') {
+                        throw new Error('Invalid response format: expected object');
+                    }
+                    
+                    if (!Array.isArray(data.patients)) {
+                        // Try to handle different response formats
+                        let patients = [];
+                        if (Array.isArray(data)) {
+                            // If the response is directly an array
+                            patients = data;
+                            logDebug('Response is direct array of patients');
+                        } else if (data.data && Array.isArray(data.data)) {
+                            // If using data property
+                            patients = data.data;
+                            logDebug('Using data.data property for patients');
+                        } else {
+                            // Try to extract patients from the response
+                            const possibleArrays = Object.values(data).filter(val => Array.isArray(val));
+                            if (possibleArrays.length > 0) {
+                                patients = possibleArrays[0];
+                                logDebug('Found patient array in response', { key: Object.keys(data).find(k => Array.isArray(data[k])) });
+                            } else {
+                                logDebug('Could not find patients array in response', data);
+                                throw new Error('Invalid response format: patients array not found');
+                            }
+                        }
+                        
+                        // Create a consistent format
+                        data = { patients };
+                    }
+                    
+                    // Update stats
+                    const totalPatientsElement = document.getElementById('totalPatients');
+                    if (totalPatientsElement) {
+                        totalPatientsElement.textContent = data.patients.length;
+                    }
+                    
+                    // Populate patient tables
+                    const patientTableBody = document.querySelector('#patientsTable tbody');
+                    if (patientTableBody) {
+                        patientTableBody.innerHTML = '';
+                    }
+                    
+                    // Clear and populate patient selects
+                    if (recordPatientSelect) {
+                        recordPatientSelect.innerHTML = '<option value="">Select a patient</option>';
+                    }
+                    
+                    const uploadPatientSelect = document.getElementById('uploadPatientSelect');
+                    if (uploadPatientSelect) {
+                        uploadPatientSelect.innerHTML = '<option value="">Select a patient</option>';
+                    }
+                    
+                    if (data.patients && data.patients.length > 0) {
+                        logDebug(`Found ${data.patients.length} patients`);
+                        
+                        data.patients.forEach((patient, index) => {
+                            // Check for required fields
+                            if (!patient.patient_id || !patient.name) {
+                                logDebug('Patient missing required fields', patient);
+                                return; // Skip this patient
+                            }
+                            
+                            // Add to table (show only the first 5)
+                            if (patientTableBody && index < 5) {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${patient.patient_id}</td>
+                                    <td>${patient.name}</td>
+                                    <td>${patient.age || 'N/A'}</td>
+                                    <td>${patient.sex || 'N/A'}</td>
+                                    <td>${patient.created_at ? new Date(patient.created_at).toLocaleDateString() : 'N/A'}</td>
+                                    <td>
+                                        <a href="/patient/${patient.patient_id}" class="btn btn-sm btn-outline-primary">View</a>
+                                    </td>
+                                `;
+                                patientTableBody.appendChild(row);
+                            }
+                            
+                            // Add to selects
+                            const option = document.createElement('option');
+                            option.value = patient.patient_id;
+                            option.textContent = `${patient.name} (${patient.patient_id})`;
+                            
+                            // Log dropdown population
+                            logDebug(`Creating option for dropdown: ${option.textContent} with value ${option.value}`);
+                            
+                            if (recordPatientSelect) {
+                                const clonedOption = option.cloneNode(true);
+                                recordPatientSelect.appendChild(clonedOption);
+                                logDebug(`Added patient to record selector: ${patient.name} (${patient.patient_id})`);
+                            }
+                            
+                            if (uploadPatientSelect) {
+                                uploadPatientSelect.appendChild(option);
+                            }
+                        });
+                        
+                        // Check if dropdown has options after population
+                        if (recordPatientSelect) {
+                            logDebug(`Record patient select now has ${recordPatientSelect.options.length} options`);
+                        }
+                        
+                        // If patients were loaded successfully, now fetch recordings
+                        fetchRecordings();
+                    } else {
+                        logDebug('No patients found or empty array returned');
+                        
+                        // Show no patients message in dropdowns
+                        if (recordPatientSelect) {
+                            recordPatientSelect.innerHTML = '<option value="">No patients available</option>';
+                        }
+                        
+                        if (uploadPatientSelect) {
+                            uploadPatientSelect.innerHTML = '<option value="">No patients available</option>';
+                        }
+                        
+                        // If no patients
+                        if (patientTableBody) {
+                            patientTableBody.innerHTML = '<tr><td colspan="6" class="text-center">No patients found</td></tr>';
+                        }
+                        
+                        // Still fetch recordings to update UI stats
+                        fetchRecordings();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching patients:', error);
+                    logDebug('Error fetching patients', error);
+                    
+                    // Show error in dropdowns
+                    if (recordPatientSelect) {
+                        recordPatientSelect.innerHTML = '<option value="">Error loading patients</option>';
+                    }
+                    
+                    const uploadPatientSelect = document.getElementById('uploadPatientSelect');
+                    if (uploadPatientSelect) {
+                        uploadPatientSelect.innerHTML = '<option value="">Error loading patients</option>';
+                    }
+                    
+                    const patientTableBody = document.querySelector('#patientsTable tbody');
+                    if (patientTableBody) {
+                        patientTableBody.innerHTML = `<tr><td colspan="6" class="text-center">Error loading patients: ${error.message}</td></tr>`;
+                    }
+                });
+            }
+            
+            // Fetch recordings
+            function fetchRecordings() {
+                logDebug('Fetching recordings data...');
+                const recordingsTableBody = document.querySelector('#recordingsTable tbody');
+                if (recordingsTableBody) {
+                    recordingsTableBody.innerHTML = '<tr><td colspan="5" class="text-center">Loading recordings...</td></tr>';
+                }
+                
+                // Get recordings from API
+                fetch('/recordings', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache' // Prevent caching
+                    }
+                })
+                .then(response => {
+                    logDebug('Recordings API response received', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        headers: Object.fromEntries([...response.headers])
+                    });
+                    
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            try {
+                                // Try to parse as JSON
+                                const data = JSON.parse(text);
+                                throw new Error(data.detail || `Failed to fetch recordings: ${response.status}`);
+                            } catch (e) {
+                                // If not JSON, use text
+                                throw new Error(`Failed to fetch recordings: ${response.status} - ${text || response.statusText}`);
+                            }
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    logDebug('Recordings data received', data);
+                    
+                    // Verify data structure and handle different formats
+                    if (!data || typeof data !== 'object') {
+                        throw new Error('Invalid response format: expected object');
+                    }
+                    
+                    if (!Array.isArray(data.recordings)) {
+                        // Try to handle different response formats
+                        let recordings = [];
+                        if (Array.isArray(data)) {
+                            // If the response is directly an array
+                            recordings = data;
+                            logDebug('Response is direct array of recordings');
+                        } else if (data.data && Array.isArray(data.data)) {
+                            // If using data property
+                            recordings = data.data;
+                            logDebug('Using data.data property for recordings');
+                        } else {
+                            // Try to extract recordings from the response
+                            const possibleArrays = Object.values(data).filter(val => Array.isArray(val));
+                            if (possibleArrays.length > 0) {
+                                recordings = possibleArrays[0];
+                                logDebug('Found recordings array in response', { 
+                                    key: Object.keys(data).find(k => Array.isArray(data[k])) 
+                                });
+                            } else {
+                                logDebug('Could not find recordings array in response', data);
+                                throw new Error('Invalid response format: recordings array not found');
+                            }
+                        }
+                        
+                        // Create a consistent format
+                        data = { recordings };
+                    }
+                    
+                    // Update stats
+                    const totalRecordingsElement = document.getElementById('totalRecordings');
+                    if (totalRecordingsElement) {
+                        totalRecordingsElement.textContent = data.recordings.length;
+                    }
+                    
+                    const totalReportsElement = document.getElementById('totalReports');
+                    if (totalReportsElement) {
+                        const reportsCount = data.recordings.filter(r => r.has_report || r.status === 'completed').length;
+                        totalReportsElement.textContent = reportsCount;
+                    }
+                    
+                    // Populate recordings table
+                    if (recordingsTableBody) {
+                        recordingsTableBody.innerHTML = '';
+                        
+                        if (!data.recordings || data.recordings.length === 0) {
+                            recordingsTableBody.innerHTML = '<tr><td colspan="5" class="text-center">No recordings found</td></tr>';
+                            return;
+                        }
+                        
+                        // Sort recordings by date (most recent first)
+                        const sortedRecordings = [...data.recordings].sort((a, b) => {
+                            const dateA = new Date(a.date || a.created_at || a.timestamp || 0);
+                            const dateB = new Date(b.date || b.created_at || b.timestamp || 0);
+                            return dateB - dateA;
+                        });
+                        
+                        // Display only the 5 most recent recordings
+                        const recentRecordings = sortedRecordings.slice(0, 5);
+                        
+                        recentRecordings.forEach(recording => {
+                            // Skip invalid recordings
+                            if (!recording) {
+                                logDebug('Skipping undefined recording entry');
+                                return;
+                            }
+                            
+                            const row = document.createElement('tr');
+                            
+                            // Handle different date field names
+                            const dateField = recording.date || recording.created_at || recording.timestamp;
+                            const date = dateField ? new Date(dateField).toLocaleDateString() : 'Unknown';
+                            
+                            // Handle different duration formats
+                            const duration = formatDuration(recording.duration || recording.length || 0);
+                            
+                            // Get patient name
+                            const patientName = recording.patient_name || 
+                                               (recording.patient ? recording.patient.name : 'Unknown');
+                            
+                            // Determine status
+                            let statusBadge = '';
+                            let statusText = '';
+                            
+                            // Support various status field names and formats
+                            const recordingStatus = recording.status || 
+                                                   (recording.has_report ? 'completed' : 
+                                                    (recording.has_transcription ? 'processing' : 'pending'));
+                            
+                            if (recordingStatus === 'completed' || recording.has_report === true) {
+                                statusBadge = 'bg-success';
+                                statusText = 'Processed';
+                            } else if (recordingStatus === 'processing' || recording.has_transcription === true) {
+                                statusBadge = 'bg-warning';
+                                statusText = 'Processing';
+                            } else {
+                                statusBadge = 'bg-secondary';
+                                statusText = 'Pending';
+                            }
+                            
+                            // Get recording ID (support different field names)
+                            const recordingId = recording.id || recording.recording_id || '';
+                            
+                            row.innerHTML = `
+                                <td>${patientName}</td>
+                                <td>${date}</td>
+                                <td>${duration}</td>
+                                <td><span class="badge ${statusBadge}">${statusText}</span></td>
+                                <td>
+                                    <a href="/recording/${recordingId}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye me-1"></i> View
+                                    </a>
+                                </td>
+                            `;
+                            recordingsTableBody.appendChild(row);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching recordings:', error);
+                    logDebug('Error fetching recordings', error);
+                    
+                    if (recordingsTableBody) {
+                        recordingsTableBody.innerHTML = `<tr><td colspan="5" class="text-center">Error loading recordings: ${error.message}</td></tr>`;
+                    }
+                    
+                    // Also update stats to show error state
+                    const totalRecordingsElement = document.getElementById('totalRecordings');
+                    if (totalRecordingsElement) {
+                        totalRecordingsElement.textContent = '0';
+                    }
+                    
+                    const totalReportsElement = document.getElementById('totalReports');
+                    if (totalReportsElement) {
+                        totalReportsElement.textContent = '0';
+                    }
+                });
+            }
+            
+            // Format duration from seconds to MM:SS
+            function formatDuration(seconds) {
+                if (!seconds) return '00:00';
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+            }
+            
+            // Handle upload recording
+            const uploadRecordingBtn = document.getElementById('uploadRecordingBtn');
+            if (uploadRecordingBtn) {
+                uploadRecordingBtn.addEventListener('click', function() {
+                    logDebug('Upload recording button clicked');
+                    const patientId = document.getElementById('uploadPatientSelect').value;
+                    const audioFileInput = document.getElementById('recordingFile');
+                    const audioFile = audioFileInput ? audioFileInput.files[0] : null;
+                    
+                    if (!patientId) {
+                        alert('Please select a patient');
+                        logDebug('No patient selected for upload');
+                        return;
+                    }
+                    
+                    if (!audioFile) {
+                        alert('Please select an audio file');
+                        logDebug('No audio file selected');
+                        return;
+                    }
+                    
+                    // Get patient name for confirmation
+                    const uploadPatientSelect = document.getElementById('uploadPatientSelect');
+                    const patientName = uploadPatientSelect.options[uploadPatientSelect.selectedIndex].text;
+                    
+                    // Validate file type
+                    const validTypes = ['.wav', '.webm', '.mp3', 'audio/wav', 'audio/webm', 'audio/mp3', 'audio/mpeg'];
+                    let isValid = false;
+                    
+                    for (const type of validTypes) {
+                        if (audioFile.name.toLowerCase().endsWith(type) || audioFile.type === type) {
+                            isValid = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!isValid) {
+                        alert('Only audio files (.wav, .webm, .mp3) are supported');
+                        logDebug('Invalid file type', audioFile.type);
+                        return;
+                    }
+                    
+                    // Confirm upload with patient name
+                    if (!confirm(`Upload this recording for patient: ${patientName}?`)) {
+                        logDebug('Upload canceled by user');
+                        return;
+                    }
+                    
+                    // Show loading state
+                    this.disabled = true;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...';
+                    
+                    // Create form data with metadata
+                    const formData = new FormData();
+                    formData.append('patient_id', patientId);
+                    formData.append('audio_file', audioFile);
+                    formData.append('patient_name', patientName.split(' (')[0]); // Extract name without ID
+                    formData.append('timestamp', Date.now());
+                    formData.append('process_transcript', 'true'); // Request transcript processing
+                    
+                    logDebug('Uploading audio file', {
+                        patientId,
+                        patientName: patientName.split(' (')[0],
+                        fileName: audioFile.name,
+                        fileType: audioFile.type,
+                        fileSize: audioFile.size
+                    });
+                    
+                    // Send to server
+                    fetch('/record-audio', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: formData
+                    })
+                    .then(response => {
+                        logDebug('Upload response received', {
+                            status: response.status,
+                            statusText: response.statusText,
+                            headers: Object.fromEntries([...response.headers])
+                        });
+                        
+                        if (!response.ok) {
+                            return response.text().then(text => {
+                                try {
+                                    // Try to parse as JSON
+                                    const data = JSON.parse(text);
+                                    throw new Error(data.detail || `Failed to upload recording: ${response.status}`);
+                                } catch (e) {
+                                    // If not JSON or parsing failed, use text
+                                    throw new Error(`Failed to upload recording: ${response.status} - ${text || response.statusText}`);
+                                }
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        logDebug('Upload successful', data);
+                        
+                        // Check for transcript processing status
+                        let message = 'Recording uploaded successfully!';
+                        if (data.transcript_status === 'processing') {
+                            message += ' Transcript is being processed and will be available shortly.';
+                        } else if (data.transcript_status === 'completed') {
+                            message += ' Transcript has been processed and is available now.';
+                        }
+                        
+                        alert(message);
+                        
+                        // Reset form
+                        const uploadForm = document.getElementById('uploadForm');
+                        if (uploadForm) uploadForm.reset();
+                        
+                        // Close modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('uploadModal'));
+                        if (modal) {
+                            modal.hide();
+                        } else {
+                            // Fallback if modal instance isn't available
+                            const uploadModalEl = document.getElementById('uploadModal');
+                            if (uploadModalEl) {
+                                const bsModal = new bootstrap.Modal(uploadModalEl);
+                                bsModal.hide();
+                            }
+                        }
+                        
+                        // Reset button
+                        this.disabled = false;
+                        this.innerHTML = 'Upload';
+                        
+                        // Refresh recordings list
+                        fetchRecordings();
+                        
+                        // Redirect to recording details if ID is provided
+                        if (data.recording_id) {
+                            setTimeout(() => {
+                                window.location.href = `/recording/${data.recording_id}`;
+                            }, 1000);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error uploading recording:', error);
+                        logDebug('Error uploading recording', error);
+                        alert(`Error: ${error.message}`);
+                        
+                        // Reset button
+                        this.disabled = false;
+                        this.innerHTML = 'Upload';
+                    });
+                });
+            }
+            
+            // Add patient form submission
+            const savePatientBtn = document.getElementById('savePatientBtn');
+            if (savePatientBtn) {
+                savePatientBtn.addEventListener('click', function() {
+                    logDebug('Save patient button clicked');
+                    const form = document.getElementById('addPatientForm');
+                    
+                    // Validate form
+                    if (!form) {
+                        logDebug('Add patient form not found');
+                        return;
+                    }
+                    
+                    if (!form.checkValidity()) {
+                        form.reportValidity();
+                        logDebug('Form validation failed');
+                        return;
+                    }
+                    
+                    // Get form data
+                    const formData = {
+                        name: document.getElementById('patientName').value,
+                        age: parseInt(document.getElementById('patientAge').value),
+                        sex: document.getElementById('patientSex').value,
+                        date_of_birth: document.getElementById('patientDob').value,
+                        mobile_number: document.getElementById('patientMobile').value
+                    };
+                    
+                    logDebug('Adding new patient', formData);
+                    
+                    // Show loading state
+                    this.disabled = true;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+                    
+                    // Send to server
+                    fetch('/add-patient', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(formData)
+                    })
+                    .then(response => {
+                        logDebug('Add patient response received', response);
+                        if (!response.ok) {
+                            return response.json().then(data => {
+                                throw new Error(data.detail || 'Failed to add patient');
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        logDebug('Patient added successfully', data);
+                        
+                        // Show success message with patient credentials
+                        const newPatientIdElement = document.getElementById('newPatientId');
+                        const newPatientPasswordElement = document.getElementById('newPatientPassword');
+                        
+                        if (newPatientIdElement) newPatientIdElement.textContent = data.patient_id;
+                        if (newPatientPasswordElement) newPatientPasswordElement.textContent = data.password;
+                        
+                        // Show the success modal
+                        const successModal = new bootstrap.Modal(document.getElementById('patientAddedModal'));
+                        successModal.show();
+                        
+                        // Close the add patient modal
+                        const addModal = bootstrap.Modal.getInstance(document.getElementById('addPatientModal'));
+                        addModal.hide();
+                        
+                        // Reset form and button
+                        form.reset();
+                        this.disabled = false;
+                        this.innerHTML = 'Save Patient';
+                        
+                        // Refresh patients list
+                        fetchRecordings();
+                    })
+                    .catch(error => {
+                        console.error('Error adding patient:', error);
+                        logDebug('Error adding patient', error);
+                        alert(error.message);
+                        
+                        // Reset button
+                        this.disabled = false;
+                        this.innerHTML = 'Save Patient';
+                    });
+                });
+            }
+            
+            // Logout event
+            const logoutLink = document.getElementById('logoutLink');
+            if (logoutLink) {
+                logoutLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    logDebug('Logout link clicked');
+                    
+                    // Clear all auth data
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('user_role');
+                    localStorage.removeItem('role');
+                    
+                    if (typeof logout === 'function') {
+                        logout();
+                    } else {
+                        window.location.href = '/';
+                    }
+                });
+            }
+            
+            // Start fetching data
+            logDebug('Starting initial data fetch...');
+            fetchPatients();
+        });
+    </script>
+</body>
+</html> 

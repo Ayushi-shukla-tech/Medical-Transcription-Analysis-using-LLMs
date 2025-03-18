@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patients - Medical Transcription System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="/static/js/auth.js"></script>
+    <style>
+        :root {
+            --primary-color: #4a86e8;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100vh;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+            z-index: 1000;
+        }
+        
+        .sidebar-header {
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+        }
+        
+        .sidebar-logo {
+            color: var(--primary-color);
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar-menu li {
+            margin-bottom: 10px;
+        }
+        
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            color: var(--secondary-color);
+            border-radius: 5px;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            background-color: rgba(74, 134, 232, 0.1);
+            color: var(--primary-color);
+        }
+        
+        .sidebar-menu i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            padding: 30px;
+        }
+        
+        .navbar {
+            background-color: #fff;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+            padding: 15px 30px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+        }
+        
+        .navbar .user-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .welcome-text {
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+        
+        .card-header {
+            background-color: #fff;
+            border-bottom: 1px solid #eee;
+            padding: 20px;
+            font-weight: 600;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background-color: #3a76d8;
+        }
+        
+        .table {
+            width: 100%;
+            margin-bottom: 0;
+        }
+        
+        .table thead th {
+            border-bottom: 2px solid #e0e0e0;
+            font-weight: 600;
+            color: var(--secondary-color);
+        }
+        
+        .table td, .table th {
+            padding: 15px;
+            vertical-align: middle;
+        }
+        
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+        
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-active {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: var(--success-color);
+        }
+        
+        .status-inactive {
+            background-color: rgba(108, 117, 125, 0.1);
+            color: var(--secondary-color);
+        }
+        
+        .add-patient-form {
+            display: none;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            color: var(--dark-color);
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="fas fa-heartbeat"></i> MedTranscribe
+            </div>
+        </div>
+        <ul class="sidebar-menu">
+            <li>
+                <a href="/dashboard">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="/patients" class="active">
+                    <i class="fas fa-users"></i> Patients
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    <i class="fas fa-microphone"></i> Recordings
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    <i class="fas fa-file-medical"></i> Reports
+                </a>
+            </li>
+            <li>
+                <a href="#" id="logoutLink">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Navbar -->
+        <div class="navbar">
+            <h4 class="mb-0">My Patients</h4>
+            <div class="user-info">
+                <div class="user-avatar">
+                    {{ user.full_name[0] | upper }}
+                </div>
+                <div class="welcome-text">
+                    Welcome, {{ user.full_name }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Patients List Section -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Patients List</span>
+                <button class="btn btn-primary" id="addPatientBtn">
+                    <i class="fas fa-plus me-1"></i> Add New Patient
+                </button>
+            </div>
+            <div class="card-body">
+                <!-- Add Patient Form -->
+                <div class="add-patient-form mb-4" id="addPatientForm">
+                    <h5 class="mb-3">Add New Patient</h5>
+                    <form id="newPatientForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="patientName" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="patientName" name="name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="patientAge" class="form-label">Age</label>
+                                <input type="number" class="form-control" id="patientAge" name="age" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="patientSex" class="form-label">Sex</label>
+                                <select class="form-select" id="patientSex" name="sex" required>
+                                    <option value="">Select</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="patientDOB" class="form-label">Date of Birth</label>
+                                <input type="date" class="form-control" id="patientDOB" name="date_of_birth" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="patientMobile" class="form-label">Mobile Number</label>
+                            <input type="tel" class="form-control" id="patientMobile" name="mobile_number" placeholder="10-digit number" required>
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="button" class="btn btn-secondary me-2" id="cancelAddPatient">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Patient</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Patients Table -->
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Patient ID</th>
+                                <th>Name</th>
+                                <th>Age</th>
+                                <th>Sex</th>
+                                <th>Mobile Number</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if patients %}
+                                {% for patient in patients %}
+                                    <tr>
+                                        <td>{{ patient.patient_id }}</td>
+                                        <td>{{ patient.name }}</td>
+                                        <td>{{ patient.age }}</td>
+                                        <td>{{ patient.sex }}</td>
+                                        <td>{{ patient.mobile_number }}</td>
+                                        <td>
+                                            <a href="/patient/{{ patient.patient_id }}" class="btn btn-sm btn-outline-primary me-1">
+                                                <i class="fas fa-eye me-1"></i> View
+                                            </a>
+                                            <button class="btn btn-sm btn-outline-success record-btn" data-patient-id="{{ patient.patient_id }}">
+                                                <i class="fas fa-microphone me-1"></i> Record
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No patients found. Add a new patient to get started.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recording Modal -->
+    <div class="modal fade" id="recordingModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Record Audio</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <div id="patientInfo" class="mb-3"></div>
+                        <button id="startRecording" class="btn btn-danger btn-lg rounded-circle">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                        <div id="recordingStatus" class="mt-2">Ready to record</div>
+                        <div id="recordingTime" class="mt-2 h4">00:00</div>
+                    </div>
+                    <div class="d-none" id="audioPreview">
+                        <h6 class="mb-2">Preview:</h6>
+                        <audio controls class="w-100" id="recordedAudio"></audio>
+                    </div>
+                    <form id="uploadForm" class="d-none">
+                        <input type="hidden" id="recordingPatientId" name="patient_id">
+                        <div class="mb-3">
+                            <label for="audioFile" class="form-label">Audio File</label>
+                            <input type="file" class="form-control" id="audioFile" name="audio_file" accept=".wav">
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Upload Recording</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication
+            if (!isLoggedIn() || getUserRole() !== 'doctor') {
+                window.location.href = '/';
+                return;
+            }
+            
+            // Set auth cookie for server-side auth
+            setAuthCookie();
+            
+            // Toggle Add Patient Form
+            document.getElementById('addPatientBtn').addEventListener('click', function() {
+                document.getElementById('addPatientForm').style.display = 'block';
+            });
+            
+            document.getElementById('cancelAddPatient').addEventListener('click', function() {
+                document.getElementById('addPatientForm').style.display = 'none';
+                document.getElementById('newPatientForm').reset();
+            });
+            
+            // Add Patient Form Submission
+            document.getElementById('newPatientForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = {
+                    name: document.getElementById('patientName').value,
+                    age: parseInt(document.getElementById('patientAge').value),
+                    sex: document.getElementById('patientSex').value,
+                    date_of_birth: document.getElementById('patientDOB').value,
+                    mobile_number: document.getElementById('patientMobile').value
+                };
+                
+                const authHeader = getAuthHeader();
+                
+                fetch('/add-patient', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...authHeader
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to add patient');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert(`Patient added successfully!\nPatient ID: ${data.patient_id}\nPassword: ${data.password}`);
+                    window.location.reload();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to add patient. Please try again.');
+                });
+            });
+            
+            // Record buttons
+            const recordBtns = document.querySelectorAll('.record-btn');
+            recordBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const patientId = this.getAttribute('data-patient-id');
+                    const patientName = this.closest('tr').querySelector('td:nth-child(2)').textContent;
+                    
+                    document.getElementById('patientInfo').textContent = `Recording for: ${patientName} (${patientId})`;
+                    document.getElementById('recordingPatientId').value = patientId;
+                    
+                    // Show recording modal
+                    const modal = new bootstrap.Modal(document.getElementById('recordingModal'));
+                    modal.show();
+                });
+            });
+            
+            // Logout event
+            document.getElementById('logoutLink').addEventListener('click', function(e) {
+                e.preventDefault();
+                logout();
+            });
+        });
+    </script>
+</body>
+</html> 
