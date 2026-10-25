@@ -1,0 +1,172 @@
+{#
+  Shared sidebar for all doctor pages.
+  Usage: {% set active = 'dashboard' %}{% include 'partials/doctor_sidebar.html' %}
+  `active` is one of: dashboard, patients, recordings, reports.
+  Quick actions open their modal on the dashboard; on other pages they link to the
+  dashboard with ?action=..., which opens the same modal after the page loads.
+#}
+<style>
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 250px;
+        height: 100vh;
+        padding: 20px;
+        background-color: #fff;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    .sidebar .sidebar-header {
+        padding-bottom: 20px;
+        border-bottom: 1px solid #eee;
+        margin-bottom: 20px;
+    }
+
+    .sidebar .sidebar-logo {
+        color: var(--primary-color, #4a86e8);
+        font-size: 24px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+    }
+
+    .sidebar .sidebar-logo i {
+        margin-right: 10px;
+        font-size: 28px;
+    }
+
+    .sidebar .sidebar-section-title {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #9aa1a9;
+        margin: 16px 15px 8px;
+    }
+
+    .sidebar .sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .sidebar .sidebar-menu li {
+        margin-bottom: 4px;
+    }
+
+    .sidebar .sidebar-menu a {
+        display: flex;
+        align-items: center;
+        padding: 10px 15px;
+        color: var(--secondary-color, #6c757d);
+        border-radius: 5px;
+        text-decoration: none;
+        transition: background-color 0.2s, color 0.2s;
+    }
+
+    .sidebar .sidebar-menu a:hover,
+    .sidebar .sidebar-menu a.active {
+        background-color: rgba(74, 134, 232, 0.1);
+        color: var(--primary-color, #4a86e8);
+    }
+
+    .sidebar .sidebar-menu a.active {
+        font-weight: 600;
+    }
+
+    .sidebar .sidebar-menu i {
+        margin-right: 10px;
+        width: 20px;
+        text-align: center;
+    }
+
+    .sidebar .sidebar-footer {
+        margin-top: auto;
+        padding-top: 16px;
+        border-top: 1px solid #eee;
+    }
+
+    .sidebar .sidebar-footer a:hover {
+        background-color: rgba(220, 53, 69, 0.08);
+        color: #dc3545;
+    }
+</style>
+
+<div class="sidebar">
+    <div class="sidebar-header">
+        <a href="/dashboard" class="sidebar-logo">
+            <i class="fas fa-heartbeat"></i>
+            MedTranscribe
+        </a>
+    </div>
+
+    <ul class="sidebar-menu">
+        <li>
+            <a href="/dashboard" {% if active == 'dashboard' %}class="active" aria-current="page"{% endif %}>
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+        </li>
+        <li>
+            <a href="/patients" {% if active == 'patients' %}class="active" aria-current="page"{% endif %}>
+                <i class="fas fa-users"></i> Patients
+            </a>
+        </li>
+        <li>
+            <a href="/recordings" {% if active == 'recordings' %}class="active" aria-current="page"{% endif %}>
+                <i class="fas fa-microphone"></i> Recordings
+            </a>
+        </li>
+        <li>
+            <a href="/reports" {% if active == 'reports' %}class="active" aria-current="page"{% endif %}>
+                <i class="fas fa-file-medical"></i> Reports
+            </a>
+        </li>
+    </ul>
+
+    <div class="sidebar-section-title">Quick Actions</div>
+    <ul class="sidebar-menu">
+        <li>
+            {% if active == 'dashboard' %}
+            <a href="#" data-bs-toggle="modal" data-bs-target="#recordModal">
+            {% else %}
+            <a href="/dashboard?action=record">
+            {% endif %}
+                <i class="fas fa-circle-dot"></i> Record Session
+            </a>
+        </li>
+        <li>
+            {% if active == 'dashboard' %}
+            <a href="#" data-bs-toggle="modal" data-bs-target="#uploadModal">
+            {% else %}
+            <a href="/dashboard?action=upload">
+            {% endif %}
+                <i class="fas fa-upload"></i> Upload Recording
+            </a>
+        </li>
+        <li>
+            {% if active == 'dashboard' %}
+            <a href="#" data-bs-toggle="modal" data-bs-target="#addPatientModal">
+            {% else %}
+            <a href="/dashboard?action=add-patient">
+            {% endif %}
+                <i class="fas fa-user-plus"></i> Add Patient
+            </a>
+        </li>
+    </ul>
+
+    <div class="sidebar-footer">
+        <ul class="sidebar-menu">
+            <li>
+                <a href="#" id="logoutLink">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>

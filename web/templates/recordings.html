@@ -1,0 +1,104 @@
+{% extends 'doctor_base.html' %}
+{% set active = 'recordings' %}
+
+{% block title %}Recordings{% endblock %}
+{% block heading %}Recordings{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">
+        <span>All Recordings <span class="badge bg-light text-secondary ms-1">{{ recordings | length }}</span></span>
+        <div class="d-flex flex-wrap gap-2">
+            <input type="search" class="form-control form-control-sm" id="tableSearch" placeholder="Search by patient name or ID" style="width: 240px;">
+            <select class="form-select form-select-sm" id="statusFilter" style="width: 160px;">
+                <option value="">All statuses</option>
+                <option value="report">Report ready</option>
+                <option value="transcribed">Transcribed</option>
+                <option value="pending">Pending</option>
+            </select>
+            <a href="/dashboard?action=record" class="btn btn-sm btn-primary">
+                <i class="fas fa-circle-dot me-1"></i> Record
+            </a>
+            <a href="/dashboard?action=upload" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-upload me-1"></i> Upload
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if recordings %}
+        <div class="table-responsive">
+            <table class="table" data-filter-table>
+                <thead>
+                    <tr>
+                        <th>Patient</th>
+                        <th>Recorded On</th>
+                        <th>Duration</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in recordings %}
+                    {% set status = 'report' if r.has_report else ('transcribed' if r.has_transcription else 'pending') %}
+                    <tr data-search="{{ (r.patient_name ~ ' ' ~ (r.patient_id or '')) | lower }}" data-status="{{ status }}">
+                        <td>
+                            {% if r.patient_id %}
+                            <a href="/patient/{{ r.patient_id }}" class="fw-semibold text-decoration-none">{{ r.patient_name }}</a>
+                            <div class="small text-muted">{{ r.patient_id }}</div>
+                            {% else %}
+                            {{ r.patient_name }}
+                            {% endif %}
+                        </td>
+                        <td><span data-datetime="{{ r.date }}">{{ r.date[:10] }}</span></td>
+                        <td><span data-duration="{{ r.duration or 0 }}"></span></td>
+                        <td>
+                            {% if status == 'report' %}
+                            <span class="badge bg-success">Report ready</span>
+                            {% elif status == 'transcribed' %}
+                            <span class="badge bg-warning text-dark">Transcribed</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end text-nowrap">
+                            <a href="/recording/{{ r.id }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye me-1"></i> View
+                            </a>
+                            {% if r.report_id %}
+                            <a href="/download-report/{{ r.report_id }}" class="btn btn-sm btn-outline-secondary ms-1" title="Download report">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    <tr id="noMatchesRow" class="d-none">
+                        <td colspan="5" class="text-center text-muted">No recordings match your filters.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div><i class="fas fa-microphone"></i></div>
+            <p class="mb-3">No recordings yet.</p>
+            <a href="/dashboard?action=record" class="btn btn-primary me-2">Record a session</a>
+            <a href="/dashboard?action=upload" class="btn btn-outline-primary">Upload a recording</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Server stores UTC timestamps without a zone suffix; show them in local time
+    document.querySelectorAll('[data-datetime]').forEach(el => {
+        const d = new Date(el.dataset.datetime + 'Z');
+        if (!isNaN(d)) el.textContent = d.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+    });
+    document.querySelectorAll('[data-duration]').forEach(el => {
+        el.textContent = formatDuration(Number(el.dataset.duration));
+    });
+</script>
+{% endblock %}
