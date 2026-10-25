@@ -1,5 +1,7 @@
+import json
 import logging
 import time
+from datetime import date
 import os
 import google.generativeai as genai
 from reportlab.lib.pagesizes import letter
@@ -24,7 +26,7 @@ class ReportGenerator:
     A class to handle medical report generation using Google's Gemini model.
     """
     
-    def __init__(self, model_name="gemini-1.5-flash-8b"):
+    def __init__(self, model_name="gemini-2.5-flash"):
         """
         Initialize the ReportGenerator with a specific model.
         
@@ -61,16 +63,102 @@ class ReportGenerator:
             logger.error(f"Error configuring Gemini API: {str(e)}")
             return False
     
-    def generate_report(self, entities, summary, retries=3, delay=5):
+    # Sections of the conversation summary, in display order: (JSON key, heading)
+    SUMMARY_SECTIONS = [
+        ("patient_reported", "Patient reported"),
+        ("doctor_said", "Doctor's assessment & advice"),
+        ("next_steps", "Next steps"),
+    ]
+    # Structured lists returned alongside the summary
+    SUMMARY_LISTS = ["symptoms", "medications", "tests", "precautions", "causes"]
+
+    def summarize_conversation(self, transcript, retries=3, delay=5):
+        """
+        Summarize a doctor-patient conversation into a short list of key points.
+
+        Args:
+            transcript (str): Raw transcript of the conversation (no speaker labels)
+            retries (int): Number of retries if generation fails
+            delay (int): Delay between retries in seconds
+
+        Returns:
+            dict or None: {"summary": str, "symptoms": [...], "medications": [...], "tests": [...],
+            "precautions": [...], "causes": [...]}, where "summary" is plain text with one heading
+            per section followed by "- " bullets. None if Gemini is unavailable.
+        """
+        prompt = f"""
+        You are a medical scribe. Below is an automatic transcript of a conversation between a doctor and a patient.
+        The transcript has no speaker labels, so work out who is speaking from context.
+
+        Return ONLY a JSON object (no markdown, no code fences) with these keys:
+        - "patient_reported": what the patient said about their symptoms, duration, history and concerns
+        - "doctor_said": what the doctor said about those symptoms: assessment, likely cause or diagnosis, advice, prescriptions
+        - "next_steps": tests, follow-up or instructions agreed on
+        - "symptoms", "medications", "tests", "precautions", "causes": short names only (e.g. "headache", "paracetamol 500mg")
+
+        Rules:
+        - Every value is a list of strings. Use an empty list when the conversation does not cover it.
+        - Keep it short: at most 4 bullets per section, each bullet under 20 words.
+        - Include only what was actually said. Do not invent details or add your own medical advice.
+
+        Transcript:
+        \"\"\"{transcript}\"\"\"
+        """
+
+        for i in range(retries):
+            try:
+                if self.model is None:
+                    logger.error("Gemini model not initialized. Check API key.")
+                    return None
+
+                logger.info("Summarizing conversation with Gemini")
+                response = self.model.generate_content(prompt)
+                data = self._parse_json(response.text)
+
+                lines = []
+                for key, heading in self.SUMMARY_SECTIONS:
+                    points = [str(p).strip() for p in data.get(key) or [] if str(p).strip()]
+                    if points:
+                        lines.append(f"{heading}:")
+                        lines.extend(f"- {p}" for p in points)
+                        lines.append("")
+
+                result = {"summary": "\n".join(lines).strip() or "No medical discussion was found in this recording."}
+                for key in self.SUMMARY_LISTS:
+                    result[key] = [str(v).strip() for v in data.get(key) or [] if str(v).strip()]
+
+                logger.info("Conversation summary complete")
+                return result
+            except Exception as e:
+                logger.error(f"Error summarizing conversation: {e}. Retrying in {delay} seconds...")
+                time.sleep(delay)
+
+        return None
+
+    @staticmethod
+    def _parse_json(text):
+        """Parse a JSON object from a model response, tolerating ```json fences around it."""
+        text = text.strip()
+        start, end = text.find("{"), text.rfind("}")
+        if start == -1 or end == -1:
+            raise ValueError("No JSON object in model response")
+        return json.loads(text[start:end + 1])
+
+    def generate_report(self, entities, summary, patient_name=None, patient_age=None, patient_sex=None,
+                        physician=None, retries=3, delay=5):
         """
         Generate a clinical report based on entities and summary.
-        
+
         Args:
             entities (str or list): Extracted medical entities
             summary (str): Summarized medical conversation
+            patient_name (str): Patient's name, if known
+            patient_age (int): Patient's age, if known
+            patient_sex (str): Patient's sex, if known
+            physician (str): Treating doctor's name, if known
             retries (int): Number of retries if generation fails
             delay (int): Delay between retries in seconds
-            
+
         Returns:
             str: Generated clinical report
         """
@@ -79,17 +167,17 @@ class ReportGenerator:
             entities_text = ", ".join([f"{e['term']} ({e['type']})" for e in entities])
         else:
             entities_text = str(entities)
-        
+
         prompt = f"""
         You are an expert medical assistant tasked with generating a detailed and structured clinical report. Based on the extracted medical entities and summarized findings from a doctor-patient conversation, provide a well-formatted report. Follow this structure:
-        
-        ### **Patient Clinical Report**  
-        **Patient Information:**  
-        - Name: [If available]  
-        - Age: [If available]  
-        - Gender: [If available]  
-        - Date of Visit: [Today's Date]  
-        - Physician: [If available]  
+
+        ### **Patient Clinical Report**
+        **Patient Information:**
+        - Name: {patient_name or '[If available]'}
+        - Age: {patient_age or '[If available]'}
+        - Gender: {patient_sex or '[If available]'}
+        - Date of Visit: {date.today().strftime('%d %B %Y')}  
+        - Physician: {physician or '[If available]'}  
         
         ### **Chief Complaint & History:**  
         - **Primary Symptoms:** {entities_text}  

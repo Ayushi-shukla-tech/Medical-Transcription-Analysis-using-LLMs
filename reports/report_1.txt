@@ -1,0 +1,68 @@
+Medical Report
+==============
+
+Patient: Abhit Pandey
+Patient ID: P00003
+Age: 18
+Sex: Male
+Date: 2026-10-24
+
+Summary:
+Patient reported:
+- Patient reports not having strength to open something.
+- Patient wants vitals and temperature checked.
+- Patient is unsure if they still have a fever.
+
+Doctor's assessment & advice:
+- Doctor asks if the patient wants to call their mom.
+- Doctor attempts to troubleshoot Wi-Fi connection issues.
+
+Next steps:
+- Vitals check (requested by patient).
+- Temperature check (requested by patient).
+
+Full Report:
+### **Patient Clinical Report**
+**Patient Information:**
+- Name: Abhit Pandey
+- Age: 18
+- Gender: Male
+- Date of Visit: 25 October 2026
+- Physician: Not specified
+
+### **Chief Complaint & History:**
+- **Primary Symptoms:** The patient reports experiencing fever and a general lack of strength. He is unsure if he still has a fever but feels weak.
+- **Medical History:** No relevant medical history was mentioned.
+- **Medications:** No current medications were reported.
+- **Allergies:** No allergies were specified.
+
+### **Examination Findings & Observations:**
+- **Vital Signs:** A full vitals check and temperature check were requested by the patient and are pending. No objective measurements are available at this time.
+- **Physical Examination Findings:** The patient subjectively reports not having the strength to perform simple actions, such as opening something. No further objective physical examination findings were documented.
+- **Lab & Imaging Results:** No lab or imaging results are available.
+
+### **Assessment & Diagnosis:**
+- **Provisional Diagnosis:** Given the reported symptoms of fever and lack of strength, a general viral illness, such as a common cold or a mild flu-like syndrome, is provisionally considered.
+- **Differential Diagnosis:** Other possibilities include fatigue due to other causes, early stages of another infection, or dehydration.
+- **Clinical Justification:**
+    - Patient reports not having strength to open something.
+    - Patient wants vitals and temperature checked.
+    - Patient is unsure if they still have a fever.
+    - The doctor acknowledged the patient's concerns and requests for basic checks. The doctor also inquired about the patient's desire to contact his mother and attempted to troubleshoot Wi-Fi issues, which are external to the immediate clinical assessment but reflect patient interaction.
+    - Next steps: A comprehensive vitals check and temperature assessment are necessary to further evaluate the patient's current condition and confirm the presence or absence of fever.
+
+### **Treatment Plan & Recommendations:**
+- **Medications Prescribed:** No medications have been prescribed at this time, pending further assessment.
+- **Diagnostic Tests Advised:**
+    - **Vitals Check:** To measure essential body functions like heart rate, breathing rate, blood pressure, and oxygen saturation.
+    - **Temperature Check:** To accurately determine if a fever is present.
+- **Lifestyle & Dietary Recommendations:** No specific recommendations have been made yet.
+- **Follow-up Instructions:** Follow-up will be based on the results of the vital signs and temperature checks. Further instructions will be provided once these initial assessments are completed.
+
+### **Additional Notes & Explanations:**
+- **Fever:** An elevated body temperature, often a sign of infection or inflammation.
+- **Lack of Strength:** A subjective feeling of weakness or reduced physical power.
+- **Vitals Check:** A routine measurement of basic body functions including heart rate, blood pressure, respiratory rate, and oxygen saturation, providing an overview of a person's general health status.
+- **Temperature Check:** A measurement of body temperature to detect fever or hypothermia.
+
+Tests:

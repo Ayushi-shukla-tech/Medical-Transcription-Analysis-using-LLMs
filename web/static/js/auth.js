@@ -72,6 +72,10 @@ function logout() {
     localStorage.removeItem('token_type');
     localStorage.removeItem('user_role');
     localStorage.removeItem('username');
+    // Legacy keys from older builds of the dashboard
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    document.cookie = 'Authorization=; path=/; max-age=0; SameSite=Strict';
     
     // Redirect to login page
     window.location.href = '/';

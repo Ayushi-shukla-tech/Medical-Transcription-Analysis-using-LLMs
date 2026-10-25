@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Depends, HTTPException, status, UploadFile, File, Form
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, FileResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, FileResponse, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -12,7 +12,9 @@ import shutil
 import uuid
 from pydantic import BaseModel
 import logging
-import wave
+import mimetypes
+import librosa
+import re
 
 # Import from our modules
 from .auth.auth import (
@@ -22,9 +24,8 @@ from .auth.auth import (
 )
 from .models.database import User, Patient, Recording, Transcription, Report, Entity
 from .models.init_db import initialize_database, reset_database
+from .report_format import parse_report, build_report_pdf
 from medical_transcription.transcription.whisper_transcriber import WhisperTranscriber
-from medical_transcription.ner.medical_ner import MedicalNER
-from medical_transcription.summarization.text_summarizer import TextSummarizer
 from medical_transcription.report_generation.report_generator import ReportGenerator
 
 # Create FastAPI app
@@ -35,11 +36,40 @@ app.mount("/static", StaticFiles(directory="web/static"), name="static")
 
 # Configure templates
 templates = Jinja2Templates(directory="web/templates")
+# Report lists (symptoms, medications, ...) are stored as JSON strings
+templates.env.filters["from_json"] = lambda value: json.loads(value) if value else []
+
+
+def summary_sections(text):
+    """Split a stored summary ("Heading:" lines followed by "- point" lines) into [(heading, [points])].
+    Lines outside that format (e.g. older paragraph summaries) become (None, [line])."""
+    sections = []
+    for line in (text or "").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith("- ") and sections and sections[-1][0]:
+            sections[-1][1].append(line[2:])
+        elif line.endswith(":") and not line.startswith("- "):
+            sections.append((line[:-1], []))
+        else:
+            sections.append((None, [line]))
+    return sections
+
+
+templates.env.filters["summary_sections"] = summary_sections
+# Detailed clinical report is Markdown written by Gemini; render it as headings and bullets
+templates.env.filters["report_blocks"] = parse_report
+
+# Audio formats accepted for upload. Decoding goes through librosa, which falls back to
+# ffmpeg for compressed formats (mp3, m4a, webm, ...), so ffmpeg must be installed.
+ALLOWED_AUDIO_EXTENSIONS = {
+    ".wav", ".mp3", ".m4a", ".aac", ".ogg", ".oga", ".opus", ".flac",
+    ".webm", ".wma", ".amr", ".aiff", ".aif", ".caf", ".mp4", ".3gp",
+}
 
 # Initialize processing components
 transcriber = WhisperTranscriber()
-ner = MedicalNER()
-summarizer = TextSummarizer()
 report_generator = ReportGenerator()
 
 # Create directories for uploads and recordings
@@ -314,6 +344,60 @@ async def patient_details(
         "recordings": recordings
     })
 
+def create_report(db: Session, transcription: Transcription, patient: Patient) -> Report:
+    """Summarize a transcription with Gemini and store it as the recording's report.
+
+    Replaces any existing report for the transcription. Raises RuntimeError if the
+    conversation summary could not be generated.
+    """
+    recording = db.query(Recording).filter(Recording.id == transcription.recording_id).first()
+    doctor = db.query(User).filter(User.id == recording.doctor_id).first() if recording else None
+    result = report_generator.summarize_conversation(transcription.text)
+    if result is None:
+        raise RuntimeError("Conversation summary could not be generated (check GOOGLE_API_KEY and network)")
+
+    key_terms = ", ".join(
+        f"{term} ({kind})"
+        for kind in ("symptoms", "medications", "tests")
+        for term in result[kind]
+    ) or "None identified"
+    report_text = report_generator.generate_report(
+        key_terms,
+        result["summary"],
+        patient_name=patient.name,
+        patient_age=patient.age,
+        patient_sex=patient.sex,
+        physician=doctor.full_name if doctor else None
+    )
+
+    # Replace the previous report, if any
+    old_report = db.query(Report).filter(Report.transcription_id == transcription.id).first()
+    if old_report:
+        db.query(Entity).filter(Entity.report_id == old_report.id).delete()
+        db.delete(old_report)
+        db.flush()
+
+    report = Report(
+        transcription_id=transcription.id,
+        summary=result["summary"],
+        full_report=report_text,
+        medications=json.dumps(result["medications"]),
+        tests=json.dumps(result["tests"]),
+        symptoms=json.dumps(result["symptoms"]),
+        causes=json.dumps(result["causes"]),
+        precautions=json.dumps(result["precautions"])
+    )
+    db.add(report)
+    db.flush()
+
+    for kind in ("symptoms", "medications", "tests", "causes", "precautions"):
+        for term in result[kind]:
+            db.add(Entity(report_id=report.id, entity_type=kind.upper().rstrip("S"), text=term, start_char=0, end_char=0))
+
+    db.commit()
+    db.refresh(report)
+    return report
+
 @app.post("/record-audio")
 async def record_audio(
     patient_id: str = Form(...),
@@ -331,41 +415,47 @@ async def record_audio(
         if patient.doctor_id != current_user.id:
             raise HTTPException(status_code=403, detail="Not authorized for this patient")
         
-        # Save audio file
-        file_extension = os.path.splitext(audio_file.filename)[1]
-        if file_extension.lower() != '.wav':
-            raise HTTPException(status_code=400, detail="Only .wav files are supported")
-        
+        # Save audio file. Browsers may send recordings without a usable extension, so fall back
+        # to the MIME type (e.g. audio/webm -> .webm).
+        file_extension = os.path.splitext(audio_file.filename or "")[1].lower()
+        content_type = (audio_file.content_type or "").split(";")[0].strip().lower()
+        if file_extension not in ALLOWED_AUDIO_EXTENSIONS:
+            guessed = mimetypes.guess_extension(content_type) if content_type.startswith("audio/") else None
+            if guessed not in ALLOWED_AUDIO_EXTENSIONS:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Unsupported file type. Please upload an audio file (mp3, wav, m4a, aac, ogg, flac, webm, ...)."
+                )
+            file_extension = guessed
+
         filename = f"{uuid.uuid4()}{file_extension}"
         file_path = os.path.join("recordings", filename)
-        
+
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(audio_file.file, buffer)
-        
+
         # Create recording record
         recording = Recording(
             patient_id=patient.id,
             doctor_id=current_user.id,
-            filename=audio_file.filename,
+            filename=audio_file.filename or filename,
             file_path=file_path,
             duration=0  # Will be updated after processing
         )
         db.add(recording)
         db.commit()
         db.refresh(recording)
-        
+
         # Process the audio file (transcription)
         try:
             transcription_text = transcriber.transcribe(file_path)
-            
-            # Update recording duration (estimate based on file size)
-            with wave.open(file_path, 'rb') as wav_file:
-                frames = wav_file.getnframes()
-                rate = wav_file.getframerate()
-                duration = frames / float(rate)
-                recording.duration = int(duration)
+
+            try:
+                recording.duration = int(librosa.get_duration(path=file_path))
                 db.commit()
-            
+            except Exception as e:
+                logging.warning(f"Could not read duration of {file_path}: {str(e)}")
+
             # Create transcription
             transcription = Transcription(
                 recording_id=recording.id,
@@ -374,85 +464,35 @@ async def record_audio(
             db.add(transcription)
             db.commit()
             db.refresh(transcription)
-            
-            # Generate report
-            try:
-                summary = summarizer.summarize(transcription_text)
-                
-                # Extract medical entities with NER
-                entities = ner.extract_entities(transcription_text)
-                
-                # Format entities for report
-                medications = []
-                tests = []
-                symptoms = []
-                causes = []
-                precautions = []
-                
-                for entity in entities:
-                    if entity['type'] == 'MEDICATION':
-                        medications.append(entity['text'])
-                    elif entity['type'] == 'TEST':
-                        tests.append(entity['text'])
-                    elif entity['type'] == 'SYMPTOM':
-                        symptoms.append(entity['text'])
-                    elif entity['type'] == 'CAUSE':
-                        causes.append(entity['text'])
-                    elif entity['type'] == 'PRECAUTION':
-                        precautions.append(entity['text'])
-                
-                # Generate full report
-                report_text = report_generator.generate_report(
-                    transcription_text,
-                    summary,
-                    patient_name=patient.name,
-                    patient_age=patient.age,
-                    patient_sex=patient.sex
-                )
-                
-                # Create report record
-                report = Report(
-                    transcription_id=transcription.id,
-                    summary=summary,
-                    full_report=report_text,
-                    medications=json.dumps(medications),
-                    tests=json.dumps(tests),
-                    symptoms=json.dumps(symptoms),
-                    causes=json.dumps(causes),
-                    precautions=json.dumps(precautions)
-                )
-                db.add(report)
-                db.commit()
-                
-                # Create entities
-                for entity in entities:
-                    db_entity = Entity(
-                        report_id=report.id,
-                        entity_type=entity['type'],
-                        text=entity['text'],
-                        start_char=entity.get('start', 0),
-                        end_char=entity.get('end', 0)
-                    )
-                    db.add(db_entity)
-                
-                db.commit()
-                
-            except Exception as e:
-                logging.error(f"Error generating report: {str(e)}")
-                # Continue without report
-        
+
         except Exception as e:
             logging.error(f"Error transcribing audio: {str(e)}")
             return JSONResponse(
                 status_code=200,
                 content={"message": "Recording saved but transcription failed. Please try again later."}
             )
-        
+
+        # Summarize the conversation and build the report
+        try:
+            create_report(db, transcription, patient)
+        except Exception as e:
+            logging.error(f"Error generating report: {str(e)}")
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "message": "Recording transcribed, but the summary could not be generated. "
+                               "Open the recording and click Generate Summary to retry.",
+                    "recording_id": recording.id
+                }
+            )
+
         return JSONResponse(
             status_code=200,
             content={"message": "Recording processed successfully", "recording_id": recording.id}
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"Error in record_audio: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -498,6 +538,51 @@ async def view_recording(
         "entities": entities
     })
 
+def get_authorized_recording(db: Session, recording_id: int, current_user: User) -> Recording:
+    """Recording the current user may access: the doctor who recorded it or the patient it belongs to."""
+    recording = db.query(Recording).filter(Recording.id == recording_id).first()
+    if not recording:
+        raise HTTPException(status_code=404, detail="Recording not found")
+    if current_user.role == "doctor" and recording.doctor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to access this recording")
+    if current_user.role == "patient":
+        patient = db.query(Patient).filter(Patient.id == recording.patient_id).first()
+        if not patient or patient.user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized to access this recording")
+    return recording
+
+@app.get("/recording/{recording_id}/audio")
+async def recording_audio(
+    recording_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Stream a recording's audio file in its original format"""
+    recording = get_authorized_recording(db, recording_id, current_user)
+    if not os.path.exists(recording.file_path):
+        raise HTTPException(status_code=404, detail="Recording file not found")
+    media_type = mimetypes.guess_type(recording.file_path)[0] or "application/octet-stream"
+    return FileResponse(recording.file_path, media_type=media_type)
+
+@app.post("/recording/{recording_id}/summary")
+async def regenerate_summary(
+    recording_id: int,
+    current_user: User = Depends(get_current_doctor),
+    db: Session = Depends(get_db)
+):
+    """(Re)generate the conversation summary and report for an already transcribed recording"""
+    recording = get_authorized_recording(db, recording_id, current_user)
+    transcription = db.query(Transcription).filter(Transcription.recording_id == recording.id).first()
+    if not transcription or not (transcription.text or "").strip():
+        raise HTTPException(status_code=400, detail="This recording has no transcription to summarize")
+    patient = db.query(Patient).filter(Patient.id == recording.patient_id).first()
+    try:
+        report = create_report(db, transcription, patient)
+    except Exception as e:
+        logging.error(f"Error regenerating summary for recording {recording_id}: {str(e)}")
+        raise HTTPException(status_code=502, detail="Could not generate the summary. Please try again in a moment.")
+    return {"message": "Summary generated", "report_id": report.id}
+
 @app.get("/download-report/{report_id}")
 async def download_report(
     report_id: int,
@@ -527,64 +612,16 @@ async def download_report(
     elif current_user.role == "patient" and patient.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to download this report")
     
-    # Generate report file
-    report_filename = f"report_{report.id}.txt"
-    report_path = os.path.join("reports", report_filename)
+    # Build the PDF in memory so patient data isn't left behind in the reports/ folder
+    doctor = db.query(User).filter(User.id == recording.doctor_id).first()
+    pdf = build_report_pdf(report, recording, patient, doctor)
     
-    with open(report_path, "w") as f:
-        f.write(f"Medical Report\n")
-        f.write(f"==============\n\n")
-        f.write(f"Patient: {patient.name}\n")
-        f.write(f"Patient ID: {patient.patient_id}\n")
-        f.write(f"Age: {patient.age}\n")
-        f.write(f"Sex: {patient.sex}\n")
-        f.write(f"Date: {report.created_at.strftime('%Y-%m-%d')}\n\n")
-        f.write(f"Summary:\n{report.summary}\n\n")
-        f.write(f"Full Report:\n{report.full_report}\n\n")
-        
-        # Add entity sections
-        medications = json.loads(report.medications)
-        if medications:
-            f.write("Medications:\n")
-            for med in medications:
-                f.write(f"- {med['text']}\n")
-            f.write("\n")
-        
-        tests = json.loads(report.tests)
-        if tests:
-            f.write("Tests:\n")
-            for test in tests:
-                f.write(f"- {test['text']}\n")
-            f.write("\n")
-        
-        symptoms = json.loads(report.symptoms)
-        if symptoms:
-            f.write("Symptoms:\n")
-            for sym in symptoms:
-                f.write(f"- {sym['text']}\n")
-            f.write("\n")
-        
-        causes = json.loads(report.causes)
-        if causes:
-            f.write("Causes:\n")
-            for cause in causes:
-                f.write(f"- {cause['text']}\n")
-            f.write("\n")
-        
-        precautions = json.loads(report.precautions)
-        if precautions:
-            f.write("Precautions:\n")
-            for precaution in precautions:
-                f.write(f"- {precaution['text']}\n")
-            f.write("\n")
-        
-        # Add transcription
-        f.write(f"Transcription:\n{transcription.text}\n")
-    
-    return FileResponse(
-        path=report_path, 
-        filename=f"patient_{patient.patient_id}_report.txt",
-        media_type="text/plain"
+    safe_name = re.sub(r"[^A-Za-z0-9]+", "_", patient.name or "patient").strip("_")
+    visit_date = (recording.created_at or datetime.utcnow()).strftime("%Y-%m-%d")
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="Medical_Report_{safe_name}_{visit_date}.pdf"'}
     )
 
 # Admin routes
@@ -1087,7 +1124,7 @@ async def get_patient_recording_audio(
         # Return file
         return FileResponse(
             recording.file_path,
-            media_type="audio/wav",
+            media_type=mimetypes.guess_type(recording.file_path)[0] or "application/octet-stream",
             filename=recording.filename
         )
     
@@ -1095,54 +1132,80 @@ async def get_patient_recording_audio(
         logging.error(f"Error streaming patient recording: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+def get_doctor_recordings_data(db: Session, doctor_id: int):
+    """Recordings for a doctor, newest first, with patient and report info."""
+    recordings = db.query(Recording).filter(
+        Recording.doctor_id == doctor_id
+    ).order_by(Recording.created_at.desc()).all()
+    
+    result = []
+    for recording in recordings:
+        # Get patient info
+        patient = db.query(Patient).filter(Patient.id == recording.patient_id).first()
+        patient_name = patient.name if patient else "Unknown"
+        
+        # Get transcription and report
+        transcription = db.query(Transcription).filter(
+            Transcription.recording_id == recording.id
+        ).first()
+        
+        report = None
+        if transcription:
+            report = db.query(Report).filter(
+                Report.transcription_id == transcription.id
+            ).first()
+        
+        result.append({
+            "id": recording.id,
+            "patient_name": patient_name,
+            "patient_id": patient.patient_id if patient else None,
+            "filename": recording.filename,
+            "duration": recording.duration,
+            "date": recording.created_at.isoformat(),
+            "has_transcription": transcription is not None,
+            "has_report": report is not None,
+            "report_id": report.id if report else None,
+            "report_date": report.created_at.isoformat() if report and report.created_at else None,
+            "report_summary": report.summary if report else None
+        })
+    
+    return result
+
 @app.get("/recordings")
 async def get_doctor_recordings(
+    request: Request,
     current_user: User = Depends(get_current_doctor),
     db: Session = Depends(get_db)
 ):
-    """Get all recordings for the current doctor"""
+    """All recordings for the current doctor: JSON for API calls, HTML page otherwise"""
     try:
-        # Get recordings
-        recordings = db.query(Recording).filter(
-            Recording.doctor_id == current_user.id
-        ).order_by(Recording.created_at.desc()).all()
-        
-        # Format recordings
-        result = []
-        for recording in recordings:
-            # Get patient info
-            patient = db.query(Patient).filter(Patient.id == recording.patient_id).first()
-            patient_name = patient.name if patient else "Unknown"
-            
-            # Get transcription and report
-            transcription = db.query(Transcription).filter(
-                Transcription.recording_id == recording.id
-            ).first()
-            
-            report = None
-            if transcription:
-                report = db.query(Report).filter(
-                    Report.transcription_id == transcription.id
-                ).first()
-            
-            # Format result
-            result.append({
-                "id": recording.id,
-                "patient_name": patient_name,
-                "patient_id": patient.patient_id if patient else None,
-                "filename": recording.filename,
-                "duration": recording.duration,
-                "date": recording.created_at.isoformat(),
-                "has_transcription": transcription is not None,
-                "has_report": report is not None,
-                "report_id": report.id if report else None
-            })
-        
-        return {"recordings": result}
-    
+        recordings = get_doctor_recordings_data(db, current_user.id)
     except Exception as e:
         logging.error(f"Error fetching doctor recordings: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+    if "application/json" in request.headers.get("accept", ""):
+        return {"recordings": recordings}
+    
+    return templates.TemplateResponse("recordings.html", {
+        "request": request,
+        "user": current_user,
+        "recordings": recordings
+    })
+
+@app.get("/reports", response_class=HTMLResponse)
+async def doctor_reports_page(
+    request: Request,
+    current_user: User = Depends(get_current_doctor),
+    db: Session = Depends(get_db)
+):
+    """All generated reports for the current doctor"""
+    reports = [r for r in get_doctor_recordings_data(db, current_user.id) if r["has_report"]]
+    return templates.TemplateResponse("reports.html", {
+        "request": request,
+        "user": current_user,
+        "reports": reports
+    })
 
 if __name__ == "__main__":
     import uvicorn

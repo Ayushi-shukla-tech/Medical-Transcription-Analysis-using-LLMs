@@ -138,6 +138,7 @@
         
         .card-header {
             background-color: #fff;
+            color: var(--dark-color); /* styles.css sets white text for the login card header */
             border-bottom: 1px solid #eee;
             padding: 20px;
             font-weight: 600;
@@ -157,6 +158,25 @@
             margin-bottom: 20px;
         }
         
+        .stat-card.clickable {
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card.clickable:hover,
+        .stat-card.clickable:focus-visible {
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card .stat-link-hint {
+            font-size: 12px;
+            opacity: 0.85;
+            margin-top: 4px;
+        }
+
         .stat-card.primary {
             background-color: var(--primary-color);
         }
@@ -325,52 +345,8 @@
 </head>
 <body>
     <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-logo">
-                <i class="fas fa-heartbeat logo-icon"></i>
-                MedTranscribe
-            </div>
-        </div>
-        <ul class="sidebar-menu">
-            <li>
-                <a href="/dashboard" class="active">
-                    <i class="fas fa-tachometer-alt"></i>
-                    Dashboard
-                </a>
-            </li>
-            <li>
-                <a href="/patients">
-                    <i class="fas fa-users"></i>
-                    Patients
-                </a>
-            </li>
-            <li>
-                <a href="#" data-bs-toggle="modal" data-bs-target="#recordModal">
-                    <i class="fas fa-microphone"></i>
-                    Record Session
-                </a>
-            </li>
-            <li>
-                <a href="#" data-bs-toggle="modal" data-bs-target="#uploadModal">
-                    <i class="fas fa-upload"></i>
-                    Upload Recording
-                </a>
-            </li>
-            <li>
-                <a href="#" data-bs-toggle="modal" data-bs-target="#addPatientModal">
-                    <i class="fas fa-user-plus"></i>
-                    Add Patient
-                </a>
-            </li>
-            <li>
-                <a href="/logout" id="logoutLink">
-                    <i class="fas fa-sign-out-alt"></i>
-                    Logout
-                </a>
-            </li>
-        </ul>
-    </div>
+    {% set active = 'dashboard' %}
+    {% include 'partials/doctor_sidebar.html' %}
 
     <!-- Main Content -->
     <div class="main-content">
@@ -382,7 +358,7 @@
                     {{ user.full_name[0] | upper }}
                 </div>
                 <div class="welcome-text">
-                    Welcome, Dr. {{ user.full_name }}
+                    Welcome, {% if not user.full_name.startswith('Dr.') %}Dr. {% endif %}{{ user.full_name }}
                 </div>
             </div>
         </div>
@@ -390,37 +366,40 @@
         <!-- Stats Cards -->
         <div class="row">
             <div class="col-md-4">
-                <div class="stat-card primary">
+                <a href="/patients" class="stat-card primary clickable" title="View all patients">
                     <div class="stat-info">
                         <h3 id="totalPatients">0</h3>
                         <p>Total Patients</p>
+                        <div class="stat-link-hint">View all <i class="fas fa-arrow-right ms-1"></i></div>
                     </div>
                     <div class="stat-icon">
                         <i class="fas fa-users"></i>
                     </div>
-                </div>
+                </a>
             </div>
             <div class="col-md-4">
-                <div class="stat-card success">
+                <a href="/recordings" class="stat-card success clickable" title="View all recordings">
                     <div class="stat-info">
                         <h3 id="totalRecordings">0</h3>
                         <p>Recordings</p>
+                        <div class="stat-link-hint">View all <i class="fas fa-arrow-right ms-1"></i></div>
                     </div>
                     <div class="stat-icon">
                         <i class="fas fa-microphone"></i>
                     </div>
-                </div>
+                </a>
             </div>
             <div class="col-md-4">
-                <div class="stat-card info">
+                <a href="/reports" class="stat-card info clickable" title="View all reports">
                     <div class="stat-info">
                         <h3 id="totalReports">0</h3>
                         <p>Reports Generated</p>
+                        <div class="stat-link-hint">View all <i class="fas fa-arrow-right ms-1"></i></div>
                     </div>
                     <div class="stat-icon">
                         <i class="fas fa-file-medical"></i>
                     </div>
-                </div>
+                </a>
             </div>
         </div>
 
@@ -457,6 +436,7 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span>Recent Recordings</span>
+                <a href="/recordings" class="btn btn-sm btn-outline-primary">View All</a>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -584,9 +564,9 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="recordingFile" class="form-label">Audio File (.wav only)</label>
-                            <input type="file" class="form-control" id="recordingFile" name="audio_file" accept=".wav" required>
-                            <small class="form-text text-muted">Only .wav files are supported</small>
+                            <label for="recordingFile" class="form-label">Audio File</label>
+                            <input type="file" class="form-control" id="recordingFile" name="audio_file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.opus,.flac,.webm,.wma,.amr,.aiff" required>
+                            <small class="form-text text-muted">Any audio format: MP3, WAV, M4A, AAC, OGG, FLAC, WebM...</small>
                         </div>
                     </form>
                 </div>
@@ -626,16 +606,10 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM fully loaded. Initializing doctor dashboard...');
             
-            // Check authentication - support both token and access_token keys
-            let token = localStorage.getItem('token');
-            if (!token) {
-                token = localStorage.getItem('access_token');
-                if (token) {
-                    // Store with the expected key name for consistency
-                    localStorage.setItem('token', token);
-                    console.log('Token found with alternate key name and saved');
-                }
-            }
+            // Check authentication. Login stores the JWT as 'access_token'; an older build also
+            // copied it to 'token', and that copy went stale after the next login, so drop it.
+            localStorage.removeItem('token');
+            const token = localStorage.getItem('access_token');
             
             // Check both user_role and role keys
             let userRole = localStorage.getItem('user_role');
@@ -1026,7 +1000,37 @@
                 canvasCtx.fillRect(0, 0, visualizer.width, visualizer.height);
             }
             
+            // Quick actions on other pages link to /dashboard?action=record|upload|add-patient
+            // (optionally with &patient=<patient_id>); open the matching modal once patients are loaded.
+            function openRequestedAction() {
+                const params = new URLSearchParams(window.location.search);
+                const action = params.get('action');
+                const modalIds = { 'record': 'recordModal', 'upload': 'uploadModal', 'add-patient': 'addPatientModal' };
+                if (!modalIds[action]) return;
+
+                const patientId = params.get('patient');
+                if (patientId) {
+                    const select = document.getElementById(action === 'upload' ? 'uploadPatientSelect' : 'recordPatientSelect');
+                    if (select && [...select.options].some(o => o.value === patientId)) {
+                        select.value = patientId;
+                    }
+                }
+
+                bootstrap.Modal.getOrCreateInstance(document.getElementById(modalIds[action])).show();
+                // Drop the query string so a page refresh doesn't reopen the modal
+                window.history.replaceState({}, '', window.location.pathname);
+            }
+
             // Fetch patients for the doctor
+            // The JWT lasts 30 minutes; when an API call is rejected, send the doctor back to log in
+            function handleExpiredSession(response) {
+                if (response.status === 401) {
+                    alert('Your session has expired. Please log in again.');
+                    logout();
+                    throw new Error('Session expired');
+                }
+            }
+            
             function fetchPatients() {
                 logDebug('Fetching patients data...');
                 
@@ -1049,6 +1053,7 @@
                     }
                 })
                 .then(response => {
+                    handleExpiredSession(response);
                     logDebug('Patients API response received', {
                         status: response.status,
                         statusText: response.statusText,
@@ -1176,6 +1181,8 @@
                             logDebug(`Record patient select now has ${recordPatientSelect.options.length} options`);
                         }
                         
+                        openRequestedAction();
+
                         // If patients were loaded successfully, now fetch recordings
                         fetchRecordings();
                     } else {
@@ -1195,6 +1202,8 @@
                             patientTableBody.innerHTML = '<tr><td colspan="6" class="text-center">No patients found</td></tr>';
                         }
                         
+                        openRequestedAction();
+
                         // Still fetch recordings to update UI stats
                         fetchRecordings();
                     }
@@ -1238,6 +1247,7 @@
                     }
                 })
                 .then(response => {
+                    handleExpiredSession(response);
                     logDebug('Recordings API response received', {
                         status: response.status,
                         statusText: response.statusText,
@@ -1439,18 +1449,12 @@
                     const patientName = uploadPatientSelect.options[uploadPatientSelect.selectedIndex].text;
                     
                     // Validate file type
-                    const validTypes = ['.wav', '.webm', '.mp3', 'audio/wav', 'audio/webm', 'audio/mp3', 'audio/mpeg'];
-                    let isValid = false;
-                    
-                    for (const type of validTypes) {
-                        if (audioFile.name.toLowerCase().endsWith(type) || audioFile.type === type) {
-                            isValid = true;
-                            break;
-                        }
-                    }
+                    const audioExtensions = ['.wav', '.mp3', '.m4a', '.aac', '.ogg', '.oga', '.opus', '.flac', '.webm', '.wma', '.amr', '.aiff', '.aif', '.caf', '.mp4', '.3gp'];
+                    const fileName = audioFile.name.toLowerCase();
+                    const isValid = audioFile.type.startsWith('audio/') || audioExtensions.some(ext => fileName.endsWith(ext));
                     
                     if (!isValid) {
-                        alert('Only audio files (.wav, .webm, .mp3) are supported');
+                        alert('Please choose an audio file (MP3, WAV, M4A, AAC, OGG, FLAC, WebM...)');
                         logDebug('Invalid file type', audioFile.type);
                         return;
                     }

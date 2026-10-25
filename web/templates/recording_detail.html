@@ -42,6 +42,11 @@
             padding: 30px;
         }
         
+        /* Doctors get the shared sidebar; shift content to make room for it */
+        body.has-sidebar .main-container {
+            margin-left: 250px;
+        }
+        
         .page-header {
             background-color: #fff;
             border-radius: 10px;
@@ -201,6 +206,105 @@
             color: var(--info-color);
         }
         
+        .summary-section + .summary-section {
+            margin-top: 18px;
+        }
+
+        .summary-heading {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+
+        .summary-heading i {
+            width: 20px;
+        }
+
+        .summary-points {
+            margin: 0;
+            padding-left: 22px;
+        }
+
+        .summary-points li {
+            margin-bottom: 6px;
+            line-height: 1.5;
+        }
+
+        details.more-info {
+            border-top: 1px solid #eee;
+            padding-top: 12px;
+            margin-top: 12px;
+        }
+
+        details.more-info summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--secondary-color);
+        }
+
+        details.more-info[open] summary {
+            margin-bottom: 12px;
+        }
+
+        .full-report {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--dark-color);
+        }
+        
+        .full-report .report-heading {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--primary-color);
+            border-left: 3px solid var(--primary-color);
+            padding-left: 10px;
+            margin: 22px 0 10px;
+        }
+        
+        .full-report .report-heading:first-child {
+            margin-top: 4px;
+        }
+        
+        .full-report .report-subheading {
+            font-weight: 600;
+            margin: 12px 0 6px;
+        }
+        
+        .full-report .report-bullet {
+            position: relative;
+            padding-left: 18px;
+            margin-bottom: 6px;
+        }
+        
+        .full-report .report-bullet::before {
+            content: "•";
+            position: absolute;
+            left: 4px;
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+        
+        .full-report .report-bullet.level-1 {
+            margin-left: 18px;
+        }
+        
+        .full-report .report-bullet.level-1::before,
+        .full-report .report-bullet.level-2::before {
+            content: "–";
+            color: var(--secondary-color);
+        }
+        
+        .full-report .report-bullet.level-2 {
+            margin-left: 36px;
+        }
+        
+        .full-report p {
+            margin-bottom: 8px;
+        }
+
         .transcript-container {
             max-height: 300px;
             overflow-y: auto;
@@ -226,12 +330,16 @@
         }
     </style>
 </head>
-<body>
+<body{% if user.role == 'doctor' %} class="has-sidebar"{% endif %}>
+    {% if user.role == 'doctor' %}
+        {% set active = 'recordings' %}
+        {% include 'partials/doctor_sidebar.html' %}
+    {% endif %}
     <div class="main-container">
         <!-- Back Link -->
         {% if user.role == 'doctor' %}
-            <a href="/patients" class="back-link">
-                <i class="fas fa-arrow-left me-2"></i>Back to Patients
+            <a href="/recordings" class="back-link">
+                <i class="fas fa-arrow-left me-2"></i>Back to Recordings
             </a>
         {% else %}
             <a href="/dashboard" class="back-link">
@@ -301,7 +409,7 @@
                                 <div class="recording-info-label">Duration</div>
                                 <div class="recording-info-value">
                                     {% if recording.duration %}
-                                        {{ recording.duration // 60 }}:{{ recording.duration % 60 }} min
+                                        {{ '%d:%02d' | format(recording.duration // 60, recording.duration % 60) }} min
                                     {% else %}
                                         Unknown
                                     {% endif %}
@@ -316,7 +424,7 @@
                         <div class="recording-player mt-3">
                             <h6>Audio Recording</h6>
                             <audio controls class="audio-player">
-                                <source src="/recordings/{{ recording.file_path }}" type="audio/wav">
+                                <source src="/recording/{{ recording.id }}/audio">
                                 Your browser does not support the audio element.
                             </audio>
                         </div>
@@ -324,152 +432,122 @@
                 </div>
             </div>
             
-            <!-- Transcription and Report -->
+            <!-- Conversation Summary, Transcript and Report -->
             <div class="col-md-8">
-                <!-- Transcription Panel -->
-                {% if transcription %}
-                    <div class="panel">
-                        <div class="panel-header">
-                            <h5 class="mb-0">Transcription</h5>
-                        </div>
-                        <div class="panel-body">
-                            <div class="transcript-container">
-                                {{ transcription.text | replace('\n', '<br>') | safe }}
-                            </div>
-                        </div>
+                {% set icons = {"Patient reported": "fa-user", "Doctor's assessment & advice": "fa-user-doctor", "Next steps": "fa-list-check"} %}
+                <div class="panel">
+                    <div class="panel-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-comments me-2"></i>Conversation Summary</h5>
+                        {% if transcription and user.role == 'doctor' %}
+                            <button type="button" class="btn btn-sm btn-light" id="generateSummaryBtn">
+                                <i class="fas fa-wand-magic-sparkles me-1"></i> {{ 'Regenerate' if report else 'Generate Summary' }}
+                            </button>
+                        {% endif %}
                     </div>
-                {% else %}
-                    <div class="panel">
-                        <div class="panel-header">
-                            <h5 class="mb-0">Transcription</h5>
-                        </div>
-                        <div class="panel-body">
-                            <div class="alert alert-info">
-                                No transcription available for this recording.
-                            </div>
-                        </div>
-                    </div>
-                {% endif %}
-                
-                <!-- Report Panel -->
-                {% if report %}
-                    <div class="panel">
-                        <div class="panel-header">
-                            <h5 class="mb-0">Medical Report</h5>
-                        </div>
-                        <div class="panel-body">
-                            <div class="section">
-                                <h6>Summary</h6>
-                                <p>{{ report.summary }}</p>
-                            </div>
-                            
-                            <div class="section">
-                                <h6>Full Report</h6>
-                                <p>{{ report.full_report | replace('\n', '<br>') | safe }}</p>
-                            </div>
-                            
-                            <div class="section">
-                                <h6>Medications</h6>
-                                <div class="tag-list">
-                                    {% set medications = report.medications | from_json %}
-                                    {% if medications %}
-                                        {% for medication in medications %}
-                                            <div class="medical-tag tag-medication">{{ medication.text }}</div>
-                                        {% endfor %}
+                    <div class="panel-body">
+                        {% if report %}
+                            {% for heading, points in report.summary | summary_sections %}
+                                <div class="summary-section">
+                                    {% if heading %}
+                                        <div class="summary-heading"><i class="fas {{ icons.get(heading, 'fa-circle-info') }}"></i>{{ heading }}</div>
+                                        <ul class="summary-points">
+                                            {% for point in points %}<li>{{ point }}</li>{% endfor %}
+                                        </ul>
                                     {% else %}
-                                        <div class="text-muted">No medications identified</div>
+                                        {% for point in points %}<p class="mb-2">{{ point }}</p>{% endfor %}
                                     {% endif %}
                                 </div>
-                            </div>
-                            
-                            <div class="section">
-                                <h6>Symptoms</h6>
-                                <div class="tag-list">
-                                    {% set symptoms = report.symptoms | from_json %}
-                                    {% if symptoms %}
-                                        {% for symptom in symptoms %}
-                                            <div class="medical-tag tag-symptom">{{ symptom.text }}</div>
+                            {% endfor %}
+
+                            <!-- Key terms -->
+                            {% set term_groups = [
+                                ("Symptoms", report.symptoms | from_json, "tag-symptom"),
+                                ("Medications", report.medications | from_json, "tag-medication"),
+                                ("Tests", report.tests | from_json, "tag-test"),
+                                ("Precautions", report.precautions | from_json, "tag-precaution")
+                            ] %}
+                            {% for label, terms, css in term_groups if terms %}
+                                <div class="section mt-3 mb-0">
+                                    <h6>{{ label }}</h6>
+                                    <div class="tag-list">
+                                        {% for term in terms %}
+                                            <div class="medical-tag {{ css }}">{{ term.text if term is mapping else term }}</div>
                                         {% endfor %}
-                                    {% else %}
-                                        <div class="text-muted">No symptoms identified</div>
-                                    {% endif %}
+                                    </div>
                                 </div>
+                            {% endfor %}
+                        {% elif transcription %}
+                            <div class="alert alert-info mb-0">
+                                No summary yet for this recording.
+                                {% if user.role == 'doctor' %}Click <strong>Generate Summary</strong> to create one.{% endif %}
                             </div>
-                            
-                            <div class="section">
-                                <h6>Recommended Tests</h6>
-                                <div class="tag-list">
-                                    {% set tests = report.tests | from_json %}
-                                    {% if tests %}
-                                        {% for test in tests %}
-                                            <div class="medical-tag tag-test">{{ test.text }}</div>
-                                        {% endfor %}
-                                    {% else %}
-                                        <div class="text-muted">No tests identified</div>
-                                    {% endif %}
+                        {% else %}
+                            <div class="alert alert-info mb-0">
+                                This recording has not been transcribed, so no summary is available.
+                            </div>
+                        {% endif %}
+
+                        {% if transcription %}
+                            <details class="more-info">
+                                <summary>Full transcript</summary>
+                                <div class="transcript-container">
+                                    {{ transcription.text }}
                                 </div>
-                            </div>
-                            
-                            <div class="section">
-                                <h6>Possible Causes</h6>
-                                <div class="tag-list">
-                                    {% set causes = report.causes | from_json %}
-                                    {% if causes %}
-                                        {% for cause in causes %}
-                                            <div class="medical-tag tag-cause">{{ cause.text }}</div>
-                                        {% endfor %}
-                                    {% else %}
-                                        <div class="text-muted">No causes identified</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            
-                            <div class="section">
-                                <h6>Precautions</h6>
-                                <div class="tag-list">
-                                    {% set precautions = report.precautions | from_json %}
-                                    {% if precautions %}
-                                        {% for precaution in precautions %}
-                                            <div class="medical-tag tag-precaution">{{ precaution.text }}</div>
-                                        {% endfor %}
-                                    {% else %}
-                                        <div class="text-muted">No precautions identified</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            
-                            <div class="section">
-                                <h6>Entities Identified</h6>
-                                <div class="tag-list">
-                                    {% for entity in entities %}
-                                        <div class="medical-tag tag-{{ entity.entity_type.lower() }}">
-                                            {{ entity.text }}
-                                        </div>
+                            </details>
+                        {% endif %}
+                        {% if report and report.full_report %}
+                            <details class="more-info">
+                                <summary>Detailed clinical report</summary>
+                                <div class="full-report">
+                                    {% for block in report.full_report | report_blocks %}
+                                        {% if block.kind == 'heading' %}
+                                            <div class="report-heading">{{ block.html | safe }}</div>
+                                        {% elif block.kind == 'subheading' %}
+                                            <div class="report-subheading">{{ block.html | safe }}</div>
+                                        {% elif block.kind == 'bullet' %}
+                                            <div class="report-bullet level-{{ block.level }}">{{ block.html | safe }}</div>
+                                        {% else %}
+                                            <p>{{ block.html | safe }}</p>
+                                        {% endif %}
                                     {% endfor %}
                                 </div>
-                            </div>
-                        </div>
+                            </details>
+                        {% endif %}
                     </div>
-                {% else %}
-                    <div class="panel">
-                        <div class="panel-header">
-                            <h5 class="mb-0">Medical Report</h5>
-                        </div>
-                        <div class="panel-body">
-                            <div class="alert alert-info">
-                                No report available for this recording.
-                            </div>
-                        </div>
-                    </div>
-                {% endif %}
+                </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/auth.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Add any JavaScript functionality needed for this page
+            const generateBtn = document.getElementById('generateSummaryBtn');
+            if (generateBtn) {
+                generateBtn.addEventListener('click', function() {
+                    generateBtn.disabled = true;
+                    generateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generating...';
+                    fetch('/recording/{{ recording.id }}/summary', { method: 'POST', headers: getAuthHeader() })
+                        .then(response => response.json().then(data => {
+                            if (!response.ok) throw new Error(data.detail || 'Could not generate the summary');
+                            window.location.reload();
+                        }))
+                        .catch(error => {
+                            alert(error.message);
+                            generateBtn.disabled = false;
+                            generateBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles me-1"></i> Try again';
+                        });
+                });
+            }
+
+            const logoutLink = document.getElementById('logoutLink');
+            if (logoutLink) {
+                logoutLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    logout();
+                });
+            }
         });
     </script>
 </body>

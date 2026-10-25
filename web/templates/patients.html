@@ -124,6 +124,7 @@
         
         .card-header {
             background-color: #fff;
+            color: var(--dark-color); /* styles.css sets white text for the login card header */
             border-bottom: 1px solid #eee;
             padding: 20px;
             font-weight: 600;
@@ -192,40 +193,8 @@
 </head>
 <body>
     <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-logo">
-                <i class="fas fa-heartbeat"></i> MedTranscribe
-            </div>
-        </div>
-        <ul class="sidebar-menu">
-            <li>
-                <a href="/dashboard">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-            </li>
-            <li>
-                <a href="/patients" class="active">
-                    <i class="fas fa-users"></i> Patients
-                </a>
-            </li>
-            <li>
-                <a href="#">
-                    <i class="fas fa-microphone"></i> Recordings
-                </a>
-            </li>
-            <li>
-                <a href="#">
-                    <i class="fas fa-file-medical"></i> Reports
-                </a>
-            </li>
-            <li>
-                <a href="#" id="logoutLink">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
-            </li>
-        </ul>
-    </div>
+    {% set active = 'patients' %}
+    {% include 'partials/doctor_sidebar.html' %}
 
     <!-- Main Content -->
     <div class="main-content">
@@ -237,7 +206,7 @@
                     {{ user.full_name[0] | upper }}
                 </div>
                 <div class="welcome-text">
-                    Welcome, {{ user.full_name }}
+                    Welcome, {% if not user.full_name.startswith('Dr.') %}Dr. {% endif %}{{ user.full_name }}
                 </div>
             </div>
         </div>
@@ -317,9 +286,9 @@
                                             <a href="/patient/{{ patient.patient_id }}" class="btn btn-sm btn-outline-primary me-1">
                                                 <i class="fas fa-eye me-1"></i> View
                                             </a>
-                                            <button class="btn btn-sm btn-outline-success record-btn" data-patient-id="{{ patient.patient_id }}">
+                                            <a href="/dashboard?action=record&patient={{ patient.patient_id }}" class="btn btn-sm btn-outline-success">
                                                 <i class="fas fa-microphone me-1"></i> Record
-                                            </button>
+                                            </a>
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -330,42 +299,6 @@
                             {% endif %}
                         </tbody>
                     </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Recording Modal -->
-    <div class="modal fade" id="recordingModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Record Audio</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="text-center mb-3">
-                        <div id="patientInfo" class="mb-3"></div>
-                        <button id="startRecording" class="btn btn-danger btn-lg rounded-circle">
-                            <i class="fas fa-microphone"></i>
-                        </button>
-                        <div id="recordingStatus" class="mt-2">Ready to record</div>
-                        <div id="recordingTime" class="mt-2 h4">00:00</div>
-                    </div>
-                    <div class="d-none" id="audioPreview">
-                        <h6 class="mb-2">Preview:</h6>
-                        <audio controls class="w-100" id="recordedAudio"></audio>
-                    </div>
-                    <form id="uploadForm" class="d-none">
-                        <input type="hidden" id="recordingPatientId" name="patient_id">
-                        <div class="mb-3">
-                            <label for="audioFile" class="form-label">Audio File</label>
-                            <input type="file" class="form-control" id="audioFile" name="audio_file" accept=".wav">
-                        </div>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">Upload Recording</button>
-                        </div>
-                    </form>
                 </div>
             </div>
         </div>
@@ -428,22 +361,6 @@
                 .catch(error => {
                     console.error('Error:', error);
                     alert('Failed to add patient. Please try again.');
-                });
-            });
-            
-            // Record buttons
-            const recordBtns = document.querySelectorAll('.record-btn');
-            recordBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const patientId = this.getAttribute('data-patient-id');
-                    const patientName = this.closest('tr').querySelector('td:nth-child(2)').textContent;
-                    
-                    document.getElementById('patientInfo').textContent = `Recording for: ${patientName} (${patientId})`;
-                    document.getElementById('recordingPatientId').value = patientId;
-                    
-                    // Show recording modal
-                    const modal = new bootstrap.Modal(document.getElementById('recordingModal'));
-                    modal.show();
                 });
             });
             

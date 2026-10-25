@@ -68,6 +68,9 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
+# Install ffmpeg (needed to read MP3, M4A, AAC, WebM and other compressed audio)
+brew install ffmpeg        # macOS; on Ubuntu: sudo apt install ffmpeg
+
 # Or run makefile command
 
 make install

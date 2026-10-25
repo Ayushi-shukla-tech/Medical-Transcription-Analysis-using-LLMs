@@ -154,6 +154,7 @@
         
         .card-header {
             background-color: #fff;
+            color: var(--dark-color); /* styles.css sets white text for the login card header */
             border-bottom: 1px solid #eee;
             padding: 20px;
             font-weight: 600;
@@ -203,40 +204,8 @@
 </head>
 <body>
     <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-logo">
-                <i class="fas fa-heartbeat"></i> MedTranscribe
-            </div>
-        </div>
-        <ul class="sidebar-menu">
-            <li>
-                <a href="/dashboard">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-            </li>
-            <li>
-                <a href="/patients" class="active">
-                    <i class="fas fa-users"></i> Patients
-                </a>
-            </li>
-            <li>
-                <a href="#">
-                    <i class="fas fa-microphone"></i> Recordings
-                </a>
-            </li>
-            <li>
-                <a href="#">
-                    <i class="fas fa-file-medical"></i> Reports
-                </a>
-            </li>
-            <li>
-                <a href="#" id="logoutLink">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
-            </li>
-        </ul>
-    </div>
+    {% set active = 'patients' %}
+    {% include 'partials/doctor_sidebar.html' %}
 
     <!-- Main Content -->
     <div class="main-content">
@@ -253,7 +222,7 @@
                     {{ user.full_name[0] | upper }}
                 </div>
                 <div class="welcome-text">
-                    Welcome, {{ user.full_name }}
+                    Welcome, {% if not user.full_name.startswith('Dr.') %}Dr. {% endif %}{{ user.full_name }}
                 </div>
             </div>
         </div>
@@ -382,7 +351,7 @@
                         <input type="hidden" id="recordingPatientId" name="patient_id" value="{{ patient.patient_id }}">
                         <div class="mb-3">
                             <label for="audioFile" class="form-label">Audio File</label>
-                            <input type="file" class="form-control" id="audioFile" name="audio_file" accept=".wav">
+                            <input type="file" class="form-control" id="audioFile" name="audio_file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.opus,.flac,.webm,.wma,.amr,.aiff">
                         </div>
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary">Upload Recording</button>
@@ -405,9 +374,9 @@
                     <form id="manualUploadForm">
                         <input type="hidden" name="patient_id" value="{{ patient.patient_id }}">
                         <div class="mb-3">
-                            <label for="uploadAudioFile" class="form-label">Audio File (.wav)</label>
-                            <input type="file" class="form-control" id="uploadAudioFile" name="audio_file" accept=".wav" required>
-                            <div class="form-text">Only .wav files are supported</div>
+                            <label for="uploadAudioFile" class="form-label">Audio File</label>
+                            <input type="file" class="form-control" id="uploadAudioFile" name="audio_file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.opus,.flac,.webm,.wma,.amr,.aiff" required>
+                            <div class="form-text">Any audio format: MP3, WAV, M4A, AAC, OGG, FLAC, WebM...</div>
                         </div>
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary">Upload</button>
@@ -513,7 +482,7 @@
                             };
                             
                             mediaRecorder.onstop = () => {
-                                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                                const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
                                 const audioUrl = URL.createObjectURL(audioBlob);
                                 
                                 // Show audio preview
@@ -578,7 +547,9 @@
                     fetch(recordedAudio)
                         .then(res => res.blob())
                         .then(blob => {
-                            const file = new File([blob], 'recording.wav', { type: 'audio/wav' });
+                            const mimeType = (blob.type || 'audio/webm').split(';')[0];
+                            const extension = { 'audio/webm': '.webm', 'audio/ogg': '.ogg', 'audio/mp4': '.m4a', 'audio/mpeg': '.mp3', 'audio/wav': '.wav' }[mimeType] || '.webm';
+                            const file = new File([blob], 'recording' + extension, { type: mimeType });
                             formData.append('audio_file', file);
                             
                             submitRecording(formData);
